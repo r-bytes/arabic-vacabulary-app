@@ -2,22 +2,22 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { Pencil, Trash2, GripVertical } from "lucide-react"
-import type { Card } from "@/lib/types"
-import { useVocabStore } from "@/lib/store"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { useVocabStore } from "@/lib/store"
+import type { Card } from "@/lib/types"
+import { GripVertical, Pencil, Trash2, Volume2 } from "lucide-react"
+import { useState } from "react"
 
 interface CardsGridProps {
   cards: Card[]
@@ -29,6 +29,54 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [cardToDelete, setCardToDelete] = useState<string | null>(null)
   const [draggedCard, setDraggedCard] = useState<string | null>(null)
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null)
+
+  const playAudio = async (card: Card) => {
+    if (playingAudio === card.id) return
+
+    setPlayingAudio(card.id)
+    
+    try {
+      if (card.audioUrl) {
+        // Play recorded audio
+        const audio = new Audio(card.audioUrl)
+        await audio.play()
+        audio.onended = () => setPlayingAudio(null)
+        audio.onerror = () => setPlayingAudio(null)
+      } else {
+        // Use TTS as fallback
+        const response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            text: card.ar, 
+            lang: 'ar',
+            ttsHint: card.ttsHint || 'ar-SA'
+          })
+        })
+        
+        if (response.ok) {
+          const audioBlob = await response.blob()
+          const audioUrl = URL.createObjectURL(audioBlob)
+          const audio = new Audio(audioUrl)
+          await audio.play()
+          audio.onended = () => {
+            setPlayingAudio(null)
+            URL.revokeObjectURL(audioUrl)
+          }
+          audio.onerror = () => {
+            setPlayingAudio(null)
+            URL.revokeObjectURL(audioUrl)
+          }
+        } else {
+          setPlayingAudio(null)
+        }
+      }
+    } catch (error) {
+      console.error('Audio playback failed:', error)
+      setPlayingAudio(null)
+    }
+  }
 
   const handleDeleteClick = (id: string) => {
     setCardToDelete(id)
@@ -74,24 +122,33 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
               draggedCard === card.id ? "opacity-50" : ""
             }`}
           >
-            <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEditCard(card)}>
+            <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={() => playAudio(card)}
+                disabled={playingAudio === card.id}
+              >
+                <Volume2 className={`h-3 w-3 ${playingAudio === card.id ? 'animate-pulse' : ''}`} />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEditCard(card)}>
                 <Pencil className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive"
+                className="h-6 w-6 text-destructive hover:text-destructive"
                 onClick={() => handleDeleteClick(card.id)}
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
-              <div className="flex h-7 w-7 cursor-grab items-center justify-center rounded-md hover:bg-accent active:cursor-grabbing">
+              <div className="flex h-6 w-6 cursor-grab items-center justify-center rounded-md hover:bg-accent active:cursor-grabbing">
                 <GripVertical className="h-3 w-3 text-muted-foreground" />
               </div>
             </div>
 
-            <div className="mb-3 pr-20">
+            <div className="mb-3 pr-24">
               <div dir="rtl" className="text-2xl font-semibold leading-tight">
                 {card.ar}
               </div>

@@ -1,17 +1,18 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Plus, BookOpen, Search, Download } from "lucide-react"
-import Link from "next/link"
-import { useVocabStore } from "@/lib/store"
-import type { Card } from "@/lib/types"
-import { FolderSidebar } from "@/components/folder-sidebar"
-import { CardsGrid } from "@/components/cards-grid"
 import { CardEditorModal } from "@/components/card-editor-modal"
+import { CardsGrid } from "@/components/cards-grid"
 import { FolderDropZone } from "@/components/folder-drop-zone"
+import { FolderSidebar } from "@/components/folder-sidebar"
 import { ImportExportDialog } from "@/components/import-export-dialog"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useVocabStore } from "@/lib/store"
+import type { Card } from "@/lib/types"
+import { BookOpen, Download, Plus, Search } from "lucide-react"
+import Link from "next/link"
+import { useMemo, useState } from "react"
 
 export default function DashboardPage() {
   const { folders, cards } = useVocabStore()
@@ -59,7 +60,7 @@ export default function DashboardPage() {
 
       <div className="flex flex-1 flex-col">
         <header className="border-b bg-card">
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between p-4 md:pl-4 pl-16">
             <div>
               <h1 className="text-2xl font-bold">{selectedFolder ? selectedFolder.name : "Alle kaarten"}</h1>
               <p className="text-sm text-muted-foreground">
@@ -67,6 +68,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Button variant="outline" size="sm" onClick={() => setImportExportOpen(true)}>
                 <Download className="mr-2 h-4 w-4" />
                 Import/Export

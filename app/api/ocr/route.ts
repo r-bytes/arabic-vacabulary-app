@@ -44,9 +44,10 @@ export async function POST(req: Request): Promise<Response> {
     const annotation = result.fullTextAnnotation
     const text = (annotation?.text || "").trim()
     return NextResponse.json({ text })
-  } catch (e: any) {
-    console.error("OCR error", e)
-    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 })
+  } catch (e: unknown) {
+    const error = e as Error
+    console.error("OCR error", error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 

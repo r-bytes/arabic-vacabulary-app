@@ -15,6 +15,135 @@ import type { Card } from "@/lib/types"
 import { Camera } from "lucide-react"
 import { useEffect, useState } from "react"
 
+// Enhanced Arabic to Latin transliteration with diacritics
+function transliterateArabic(arabic: string): string {
+  const transliterationMap: Record<string, string> = {
+    'ا': 'ā', 'أ': 'a', 'إ': 'i', 'آ': 'ā',
+    'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j',
+    'ح': 'ḥ', 'خ': 'kh', 'د': 'd', 'ذ': 'dh',
+    'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh',
+    'ص': 'ṣ', 'ض': 'ḍ', 'ط': 'ṭ', 'ظ': 'ẓ',
+    'ع': 'ʿ', 'غ': 'gh', 'ف': 'f', 'ق': 'q',
+    'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n',
+    'ه': 'h', 'و': 'w', 'ي': 'y', 'ى': 'ā',
+    'ة': 'a', 'ء': 'ʾ', 'ؤ': 'w', 'ئ': 'y',
+    'لا': 'lā', 'ال': 'al-'
+  }
+  
+  let result = arabic
+  
+  // Process diacritics first
+  result = result.replace(/َ/g, 'a').replace(/ُ/g, 'u').replace(/ِ/g, 'i')
+  result = result.replace(/ً/g, 'an').replace(/ٌ/g, 'un').replace(/ٍ/g, 'in')
+  result = result.replace(/ّ/g, '') // shadda (gemination)
+  result = result.replace(/ْ/g, '') // sukun (no vowel)
+  
+  // Then transliterate letters
+  for (const [arabicChar, latinChar] of Object.entries(transliterationMap)) {
+    result = result.replace(new RegExp(arabicChar, 'g'), latinChar)
+  }
+  
+  return result.trim()
+}
+
+// Add diacritics to Arabic text (simplified version)
+function addDiacriticsToArabic(arabic: string): string {
+  // This is a simplified version - in a real app you'd use a proper Arabic diacritics library
+  const diacriticsMap: Record<string, string> = {
+    'كتاب': 'كِتَاب',
+    'ماء': 'مَاء',
+    'بيت': 'بَيْت',
+    'شمس': 'شَمْس',
+    'قمر': 'قَمَر',
+    'نجم': 'نَجْم',
+    'بحر': 'بَحْر',
+    'جبل': 'جَبَل',
+    'شجر': 'شَجَر',
+    'ورد': 'وَرْد',
+    'عسل': 'عَسَل',
+    'حليب': 'حَلِيب',
+    'خبز': 'خُبْز',
+    'لحم': 'لَحْم',
+    'سمك': 'سَمَك',
+    'دجاج': 'دَجَاج',
+    'بيض': 'بَيْض',
+    'جبن': 'جُبْن',
+    'زبدة': 'زُبْدَة',
+    'سكر': 'سُكَّر',
+    'ملح': 'مِلْح',
+    'فلفل': 'فِلْفِل',
+    'بصل': 'بَصَل',
+    'ثوم': 'ثَوْم',
+    'طماطم': 'طَمَاطِم',
+    'خيار': 'خِيَار',
+    'جزر': 'جَزَر',
+    'بطاطس': 'بَطَاطِس',
+    'أرز': 'أَرُز',
+    'معكرونة': 'مَعْكَرُونَة',
+    'ذهب': 'ذَهَب',
+    'فضة': 'فِضَّة',
+    'نحاس': 'نُحَاس',
+    'حديد': 'حَدِيد',
+    'خشب': 'خَشَب',
+    'حجر': 'حَجَر',
+    'رمل': 'رَمْل',
+    'تراب': 'تُرَاب',
+    'نار': 'نَار',
+    'هواء': 'هَوَاء',
+    'أرض': 'أَرْض',
+    'سماء': 'سَمَاء',
+    'سحاب': 'سَحَاب',
+    'مطر': 'مَطَر',
+    'ثلج': 'ثَلْج',
+    'ريح': 'رِيح',
+    'برد': 'بَرْد',
+    'حر': 'حَر',
+    'صيف': 'صَيْف',
+    'شتاء': 'شِتَاء',
+    'ربيع': 'رَبِيع',
+    'خريف': 'خَرِيف'
+  }
+  
+  // Check if the word exists in our map
+  if (diacriticsMap[arabic]) {
+    return diacriticsMap[arabic]
+  }
+  
+  // If not found, return original
+  return arabic
+}
+
+// Simple word type detection for tags
+function detectWordType(arabic: string, dutch: string, english: string): string[] {
+  const tags: string[] = []
+  
+  // Check for common patterns
+  const text = `${arabic} ${dutch} ${english}`.toLowerCase()
+  
+  if (text.includes('boek') || text.includes('book') || text.includes('كتاب')) {
+    tags.push('noun')
+  }
+  if (text.includes('gaan') || text.includes('go') || text.includes('ذهب')) {
+    tags.push('verb')
+  }
+  if (text.includes('groot') || text.includes('big') || text.includes('كبير')) {
+    tags.push('adjective')
+  }
+  if (text.includes('hier') || text.includes('here') || text.includes('هنا')) {
+    tags.push('adverb')
+  }
+  if (text.includes('in') || text.includes('في')) {
+    tags.push('preposition')
+  }
+  
+  // Default to noun if no specific type detected
+  if (tags.length === 0) {
+    tags.push('noun')
+  }
+  
+  return tags
+}
+
 interface CardEditorModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -38,6 +167,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
   const [ocrBusy, setOcrBusy] = useState(false)
   const [lastOcrFile, setLastOcrFile] = useState<File | null>(null)
   const [useCloudOCR, setUseCloudOCR] = useState(false)
+  const [autoTranslate, setAutoTranslate] = useState(true)
 
   useEffect(() => {
     if (card) {
@@ -120,8 +250,9 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
               <Input
                 id="translit"
                 value={formData.translit}
-                onChange={(e) => setFormData({ ...formData, translit: e.target.value })}
+                readOnly
                 placeholder="kitāb"
+                className="bg-muted"
               />
             </div>
           </div>
@@ -147,6 +278,20 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             </div>
           </div>
 
+          {/* Auto translate logic */}
+          {autoTranslate && (
+            <AutoTranslateFields
+              value={{
+                ar: formData.ar,
+                nl: formData.nl,
+                en: formData.en,
+                translit: formData.translit,
+                tags: formData.tags
+              }}
+              onResult={(partial) => setFormData((prev) => ({ ...prev, ...partial }))}
+            />
+          )}
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="folder">Map *</Label>
@@ -171,8 +316,9 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
               <Input
                 id="tags"
                 value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                readOnly
                 placeholder="noun, place"
+                className="bg-muted"
               />
             </div>
           </div>
@@ -305,6 +451,10 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                 <Label className="text-xs" htmlFor="cloud-ocr">Cloud OCR</Label>
                 <input id="cloud-ocr" type="checkbox" checked={useCloudOCR} onChange={(e) => setUseCloudOCR(e.target.checked)} />
               </div>
+              <div className="flex items-center gap-2 ml-2">
+                <Label className="text-xs" htmlFor="auto-tr">Auto vertalen</Label>
+                <input id="auto-tr" type="checkbox" checked={autoTranslate} onChange={(e) => setAutoTranslate(e.target.checked)} />
+              </div>
             </div>
             <p className="text-xs text-muted-foreground">Tip: goede belichting, hoge scherpte en vlakke tekst verbeteren herkenning.</p>
           </div>
@@ -345,4 +495,138 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
       </DialogContent>
     </Dialog>
   )
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function useDebouncedEffect(effect: () => void, deps: any[], delay: number) {
+  useEffect(() => {
+    const handler = setTimeout(() => effect(), delay)
+    return () => clearTimeout(handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...deps, delay])
+}
+
+function AutoTranslateFields({
+  value,
+  onResult,
+}: {
+  value: { ar: string; nl: string; en: string; translit: string; tags: string }
+  onResult: (partial: Partial<{ ar: string; nl: string; en: string; translit: string; tags: string }>) => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const [lastProcessed, setLastProcessed] = useState("")
+
+  useDebouncedEffect(() => {
+    const run = async () => {
+      if (busy) return
+      
+      // Find the source text (the one that was just filled)
+      const sourceText = value.ar || value.nl || value.en
+      if (!sourceText || sourceText === lastProcessed) return
+      
+      // Determine source language
+      let sourceLang = "auto"
+      if (value.ar && value.ar === sourceText) sourceLang = "ar"
+      else if (value.nl && value.nl === sourceText) sourceLang = "nl" 
+      else if (value.en && value.en === sourceText) sourceLang = "en"
+      
+      setLastProcessed(sourceText)
+      setBusy(true)
+      
+      try {
+        console.log("Auto-translating:", { sourceText, sourceLang, currentValues: value })
+        
+        // Fill missing fields only
+        const promises = []
+        
+        if (!value.nl && sourceLang !== "nl") {
+          promises.push(
+            fetch("/api/translate", { 
+              method: "POST", 
+              headers: { "Content-Type": "application/json" }, 
+              body: JSON.stringify({ text: sourceText, source: sourceLang, target: "nl" }) 
+            })
+              .then((r) => r.json())
+              .then((j) => {
+                console.log("NL translation result:", j)
+                if (j?.translatedText) {
+                  onResult({ nl: j.translatedText })
+                }
+              })
+              .catch((e) => console.error("NL translation failed:", e))
+          )
+        }
+        
+        if (!value.en && sourceLang !== "en") {
+          promises.push(
+            fetch("/api/translate", { 
+              method: "POST", 
+              headers: { "Content-Type": "application/json" }, 
+              body: JSON.stringify({ text: sourceText, source: sourceLang, target: "en" }) 
+            })
+              .then((r) => r.json())
+              .then((j) => {
+                console.log("EN translation result:", j)
+                if (j?.translatedText) {
+                  onResult({ en: j.translatedText })
+                }
+              })
+              .catch((e) => console.error("EN translation failed:", e))
+          )
+        }
+        
+        if (!value.ar && sourceLang !== "ar") {
+          promises.push(
+            fetch("/api/translate", { 
+              method: "POST", 
+              headers: { "Content-Type": "application/json" }, 
+              body: JSON.stringify({ text: sourceText, source: sourceLang, target: "ar" }) 
+            })
+              .then((r) => r.json())
+              .then((j) => {
+                console.log("AR translation result:", j)
+                if (j?.translatedText) {
+                  onResult({ ar: j.translatedText })
+                }
+              })
+              .catch((e) => console.error("AR translation failed:", e))
+          )
+        }
+        
+        await Promise.all(promises)
+        
+        // Auto-fill transliteration if Arabic text is present and transliteration is empty
+        if (value.ar && !value.translit) {
+          const transliteration = transliterateArabic(value.ar)
+          if (transliteration) {
+            onResult({ translit: transliteration })
+          }
+        }
+        
+        // Auto-add diacritics to Arabic text if it doesn't have them
+        if (value.ar && !value.ar.match(/[\u064B-\u0652\u0670\u0640]/)) {
+          const arabicWithDiacritics = addDiacriticsToArabic(value.ar)
+          if (arabicWithDiacritics !== value.ar) {
+            onResult({ ar: arabicWithDiacritics })
+          }
+        }
+        
+        // Auto-fill tags if we have content but no tags
+        if ((value.ar || value.nl || value.en) && !value.tags) {
+          const detectedTags = detectWordType(value.ar, value.nl, value.en)
+          if (detectedTags.length > 0) {
+            onResult({ tags: detectedTags.join(', ') })
+          }
+        }
+        
+      } catch (e) {
+        console.error("Auto-translate error:", e)
+      } finally {
+        setBusy(false)
+      }
+    }
+    run()
+  }, [value.ar, value.nl, value.en, value.translit, value.tags, busy, lastProcessed, onResult], 800)
+
+  return busy ? <div className="text-xs text-muted-foreground">Vertalen...</div> : null
 }

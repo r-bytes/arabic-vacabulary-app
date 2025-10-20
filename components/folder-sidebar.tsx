@@ -1,23 +1,23 @@
 "use client"
 
-import { useState } from "react"
-import { Plus, FolderOpen, MoreVertical, Pencil, Trash2, Search } from "lucide-react"
-import { useVocabStore } from "@/lib/store"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useVocabStore } from "@/lib/store"
+import { FolderOpen, Menu, MoreVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react"
+import { useState } from "react"
 
 export function FolderSidebar({
   selectedFolderId,
@@ -36,6 +36,7 @@ export function FolderSidebar({
   const [deleteStrategy, setDeleteStrategy] = useState<"delete-cards" | "move-cards">("delete-cards")
   const [moveToFolderId, setMoveToFolderId] = useState<string>("")
   const [searchQuery, setSearchQuery] = useState("")
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
@@ -81,7 +82,30 @@ export function FolderSidebar({
 
   return (
     <>
-      <div className="flex h-full w-64 flex-col border-r bg-muted/30">
+      {/* Mobile menu button */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="fixed left-4 top-4 z-50 md:hidden"
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+      >
+        {isMobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+      </Button>
+
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        flex h-full w-64 flex-col border-r bg-sidebar transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0
+        ${isMobileOpen ? 'fixed left-0 top-0 z-50 translate-x-0' : 'fixed left-0 top-0 z-50 -translate-x-full'}
+      `}>
         <div className="border-b p-4">
           <h2 className="mb-3 text-lg font-semibold">Mappen</h2>
           <div className="relative mb-3">
@@ -102,7 +126,10 @@ export function FolderSidebar({
         <ScrollArea className="flex-1">
           <div className="p-2">
             <button
-              onClick={() => onSelectFolder(null)}
+              onClick={() => {
+                onSelectFolder(null)
+                setIsMobileOpen(false)
+              }}
               className={`mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-accent ${
                 selectedFolderId === null ? "bg-accent" : ""
               }`}
@@ -160,7 +187,10 @@ export function FolderSidebar({
                     }`}
                   >
                     <button
-                      onClick={() => onSelectFolder(folder.id)}
+                      onClick={() => {
+                        onSelectFolder(folder.id)
+                        setIsMobileOpen(false)
+                      }}
                       className="flex flex-1 items-center gap-2 text-left text-sm"
                     >
                       <FolderOpen className="h-4 w-4" />
