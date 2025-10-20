@@ -104,7 +104,7 @@ export function StudyControls({ onStartSession }: StudyControlsProps) {
       <div className="flex items-center space-x-2">
         <Checkbox id="due-only" checked={dueOnly} onCheckedChange={(checked) => setDueOnly(checked as boolean)} />
         <Label htmlFor="due-only" className="cursor-pointer text-sm">
-          Toon alleen kaarten die vandaag 'due' zijn
+          Toon alleen kaarten die vandaag &apos;due&apos; zijn
         </Label>
       </div>
 

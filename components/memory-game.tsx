@@ -32,6 +32,7 @@ export function MemoryGame({ cards, direction, onExit }: MemoryGameProps) {
 
   useEffect(() => {
     initializeGame()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, direction])
 
   useEffect(() => {

@@ -33,6 +33,7 @@ export function QuizTyping({ cards, direction, onComplete }: QuizTypingProps) {
     if (!showFeedback && currentCard && hasInteracted && !isApple) {
       setTimeout(() => handleAudio(), 300)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, showFeedback, hasInteracted, isApple])
 
   useEffect(() => {

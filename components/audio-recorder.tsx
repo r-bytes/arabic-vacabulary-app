@@ -31,7 +31,7 @@ export function AudioRecorder({ audioUrl, onAudioChange }: AudioRecorderProps) {
         "audio/mpeg",
       ]
       const supportedType = preferredTypes.find((t) =>
-        (window as any).MediaRecorder?.isTypeSupported?.(t)
+        (window as unknown as { MediaRecorder: typeof MediaRecorder }).MediaRecorder?.isTypeSupported?.(t)
       ) || ""
       const mediaRecorder = new MediaRecorder(stream, supportedType ? { mimeType: supportedType } : undefined)
       mediaRecorderRef.current = mediaRecorder

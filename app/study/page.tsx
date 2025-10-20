@@ -25,6 +25,7 @@ export default function StudyPage() {
     }
     // Shuffle cards
     return filtered.sort(() => Math.random() - 0.5)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, selectedFolderIds, dueOnly, sessionActive])
 
   const memoryCards = useMemo(() => {

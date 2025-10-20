@@ -31,6 +31,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
     if (autoPlayAudio && hasInteracted && currentCard) {
       setTimeout(() => handleAudio(), 300)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, autoPlayAudio, hasInteracted])
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
 
     window.addEventListener("keydown", handleKeyPress)
     return () => window.removeEventListener("keydown", handleKeyPress)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, sessionCards.length])
 
   const handleNext = () => {

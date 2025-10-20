@@ -26,6 +26,7 @@ export function QuizMCQ({ cards, direction, onComplete }: QuizMCQProps) {
     if (currentCard) {
       generateOptions()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, currentCard])
 
   const getQuestion = () => {

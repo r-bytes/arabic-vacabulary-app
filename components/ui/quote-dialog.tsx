@@ -78,8 +78,9 @@ Opmerking: ${q.note}`
 
       onQuoteReady?.(summary)
       onOpenChange(false)
-    } catch (e: any) {
-      setError(e.message || "Er ging iets mis")
+    } catch (e: unknown) {
+      const error = e as Error
+      setError(error.message || "Er ging iets mis")
     } finally {
       setLoading(false)
     }
@@ -111,7 +112,7 @@ Opmerking: ${q.note}`
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Incoterm</Label>
-              <Select value={incoterm} onValueChange={(v) => setIncoterm(v as any)}>
+              <Select value={incoterm} onValueChange={(v) => setIncoterm(v as "FOB"|"CIF"|"EXW")}>
                 <SelectTrigger><SelectValue placeholder="Incoterm" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="FOB">FOB</SelectItem>
@@ -122,7 +123,7 @@ Opmerking: ${q.note}`
             </div>
             <div>
               <Label>Valuta</Label>
-              <Select value={currency} onValueChange={(v) => setCurrency(v as any)}>
+              <Select value={currency} onValueChange={(v) => setCurrency(v as "USD"|"EUR")}>
                 <SelectTrigger><SelectValue placeholder="Valuta" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USD">USD</SelectItem>

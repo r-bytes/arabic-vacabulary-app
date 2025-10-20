@@ -2,16 +2,18 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import type { Card } from "@/lib/types"
-import { useVocabStore } from "@/lib/store"
+import { AudioRecorder } from "@/components/audio-recorder"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AudioRecorder } from "@/components/audio-recorder"
+import { Textarea } from "@/components/ui/textarea"
+import { recognizeTextFromFile } from "@/lib/ocr"
+import { useVocabStore } from "@/lib/store"
+import type { Card } from "@/lib/types"
+import { Camera } from "lucide-react"
+import { useEffect, useState } from "react"
 
 interface CardEditorModalProps {
   open: boolean
@@ -175,6 +177,50 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             audioUrl={formData.audioUrl}
             onAudioChange={(url) => setFormData({ ...formData, audioUrl: url || "" })}
           />
+
+          <div className="space-y-2">
+            <Label>Tekst uit foto (OCR)</Label>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <Input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  // Try multiple langs with confidence
+                  const ara = await recognizeTextFromFile(file, "ara").catch(() => ({ text: "", confidence: 0 }))
+                  const nld = await recognizeTextFromFile(file, "nld").catch(() => ({ text: "", confidence: 0 }))
+                  const eng = await recognizeTextFromFile(file, "eng").catch(() => ({ text: "", confidence: 0 }))
+
+                  const candidates = [ara, nld, eng].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+                  const best = candidates[0]
+                  const text = (best?.text || "").trim()
+
+                  const looksArabic = /[\u0600-\u06FF]/.test(text)
+                  if (looksArabic) {
+                    setFormData((prev) => ({ ...prev, ar: text }))
+                  } else if (best === nld) {
+                    setFormData((prev) => ({ ...prev, nl: text }))
+                  } else if (best === eng) {
+                    setFormData((prev) => ({ ...prev, en: text }))
+                  } else {
+                    // Fallback heuristics
+                    if (text.length <= 32) {
+                      setFormData((prev) => ({ ...prev, nl: text }))
+                    } else {
+                      setFormData((prev) => ({ ...prev, en: text }))
+                    }
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" className="justify-center">
+                <Camera className="mr-2 h-4 w-4" />
+                Gebruik camera/afbeelding
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Upload of maak een foto van het woord. We herkennen automatisch de tekst. Resultaat wordt gekozen op hoogste OCR confidence.</p>
+          </div>
 
           <div className="rounded-lg border bg-muted/30 p-4">
             <h3 className="mb-3 text-sm font-medium">Preview</h3>

@@ -1,8 +1,8 @@
 "use client"
 
 import { create } from "zustand"
-import type { Card, Folder, Direction } from "./types"
 import { dataAdapter } from "./data-adapter"
+import type { Card, Direction, Folder } from "./types"
 
 interface VocabStore {
   folders: Folder[]
@@ -34,7 +34,19 @@ export const useVocabStore = create<VocabStore>((set, get) => ({
   direction: "ar-nl",
   dueOnly: false,
 
-  loadData: () => {
+  loadData: async () => {
+    try {
+      const [foldersRes, cardsRes] = await Promise.all([
+        fetch("/api/folders"),
+        fetch("/api/cards"),
+      ])
+      if (foldersRes.ok && cardsRes.ok) {
+        const [folders, cards] = await Promise.all([foldersRes.json(), cardsRes.json()])
+        set({ folders, cards })
+        return
+      }
+    } catch {}
+    // Fallback to local adapter if API not available
     const folders = dataAdapter.listFolders()
     const cards = dataAdapter.listCards()
     set({ folders, cards })
@@ -44,13 +56,22 @@ export const useVocabStore = create<VocabStore>((set, get) => ({
   setCards: (cards) => set({ cards }),
 
   addFolder: (name) => {
-    const folder = dataAdapter.createFolder(name)
-    set({ folders: [...get().folders, folder] })
-    return folder
+    const temp = dataAdapter.createFolder(name)
+    set({ folders: [...get().folders, temp] })
+    fetch("/api/folders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) })
+      .then((r) => r.ok ? r.json() : null)
+      .then((created) => {
+        if (created?.id) {
+          set({ folders: get().folders.map((f) => (f.id === temp.id ? created : f)) })
+        }
+      })
+      .catch(() => {})
+    return temp
   },
 
   renameFolder: (id, name) => {
     dataAdapter.renameFolder(id, name)
+    fetch("/api/folders", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, name }) }).catch(() => {})
     set({
       folders: get().folders.map((f) => (f.id === id ? { ...f, name } : f)),
     })
@@ -58,6 +79,7 @@ export const useVocabStore = create<VocabStore>((set, get) => ({
 
   deleteFolder: (id, strategy, targetFolderId) => {
     dataAdapter.deleteFolder(id, strategy, targetFolderId)
+    fetch("/api/folders", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => {})
     const folders = get().folders.filter((f) => f.id !== id)
     let cards = get().cards
 
@@ -73,11 +95,26 @@ export const useVocabStore = create<VocabStore>((set, get) => ({
   addCard: (cardInput) => {
     const card = dataAdapter.createCard(cardInput)
     set({ cards: [...get().cards, card] })
+    fetch("/api/cards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(card),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((created) => {
+        if (created?.id) {
+          set({
+            cards: get().cards.map((c) => (c.id === card.id ? { ...created } : c)),
+          })
+        }
+      })
+      .catch(() => {})
     return card
   },
 
   updateCard: (id, updates) => {
     dataAdapter.updateCard(id, updates)
+    fetch("/api/cards", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...updates }) }).catch(() => {})
     set({
       cards: get().cards.map((c) => (c.id === id ? { ...c, ...updates } : c)),
     })
@@ -85,11 +122,13 @@ export const useVocabStore = create<VocabStore>((set, get) => ({
 
   deleteCard: (id) => {
     dataAdapter.deleteCard(id)
+    fetch("/api/cards", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => {})
     set({ cards: get().cards.filter((c) => c.id !== id) })
   },
 
   moveCard: (cardId, targetFolderId) => {
     dataAdapter.moveCard(cardId, targetFolderId)
+    fetch("/api/cards", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: cardId, folderId: targetFolderId }) }).catch(() => {})
     set({
       cards: get().cards.map((c) => (c.id === cardId ? { ...c, folderId: targetFolderId } : c)),
     })
