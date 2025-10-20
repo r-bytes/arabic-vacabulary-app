@@ -139,7 +139,7 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
               draggedCard === card.id ? "opacity-50" : ""
             }`}
           >
-            <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="absolute right-2 top-2 flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -182,7 +182,7 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
               </div>
             </div>
 
-            <div className="mb-3 pr-20 md:pr-24">
+            <div className="mb-3 pr-20 sm:pr-20 md:pr-24">
               <div dir="rtl" className="text-xl md:text-2xl font-semibold leading-tight text-foreground">
                 {card.ar || "Geen Arabische tekst"}
               </div>
