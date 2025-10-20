@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { recognizeTextFromFile } from "@/lib/ocr"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { Camera } from "lucide-react"
+import { Camera, RotateCcw } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Enhanced Arabic to Latin transliteration with diacritics
@@ -166,7 +166,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
   const [ocrLang, setOcrLang] = useState<"auto" | "ara" | "nld" | "eng">("auto")
   const [ocrBusy, setOcrBusy] = useState(false)
   const [lastOcrFile, setLastOcrFile] = useState<File | null>(null)
-  const [useCloudOCR, setUseCloudOCR] = useState(false)
+  const [useCloudOCR, setUseCloudOCR] = useState(true)
   const [autoTranslate, setAutoTranslate] = useState(true)
 
   useEffect(() => {
@@ -223,6 +223,19 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     }
 
     onOpenChange(false)
+  }
+
+  const clearAllFields = () => {
+    setFormData({
+      ar: "",
+      translit: "",
+      nl: "",
+      en: "",
+      tags: "",
+      folderId: defaultFolderId || folders[0]?.id || "",
+      audioUrl: "",
+      ttsHint: "ar-SA",
+    })
   }
 
   return (
@@ -483,13 +496,19 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Annuleren
+          <DialogFooter className="flex justify-between">
+            <Button type="button" variant="ghost" onClick={clearAllFields} className="text-destructive hover:text-destructive">
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Wissen
             </Button>
-            <Button type="submit" disabled={!formData.ar || !formData.folderId}>
-              {card ? "Opslaan" : "Toevoegen"}
-            </Button>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Annuleren
+              </Button>
+              <Button type="submit" disabled={!formData.ar || !formData.folderId}>
+                {card ? "Opslaan" : "Toevoegen"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
