@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server"
 import { query } from "@/lib/db"
+import { NextResponse } from "next/server"
 
 export async function GET(): Promise<Response> {
   try {
@@ -13,7 +13,6 @@ export async function GET(): Promise<Response> {
         db: !!process.env.DB_NAME,
       },
     })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: unknown) {
     const error = e as Error
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 })

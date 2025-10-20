@@ -125,6 +125,12 @@
   }
 }
 
+/* Arabic font support */
+.font-arabic {
+  font-family: 'Traditional Arabic', 'Arabic Typesetting', 'Noto Naskh Arabic', 'Geeza Pro', 'Simplified Arabic', serif;
+  font-weight: 400;
+}
+
 /* Added 3D flip card styles for flashcards */
 .flip-card {
   perspective: 1000px;

@@ -1,5 +1,6 @@
 "use client"
 
+import { CameraTranslate } from "@/components/camera-translate"
 import { CardEditorModal } from "@/components/card-editor-modal"
 import { CardsGrid } from "@/components/cards-grid"
 import { FolderDropZone } from "@/components/folder-drop-zone"
@@ -53,8 +54,6 @@ export default function DashboardPage() {
     setEditorOpen(true)
   }
 
-  const otherFolders = folders.filter((f) => f.id !== selectedFolderId)
-
   return (
     <div className="flex h-screen">
       <FolderSidebar selectedFolderId={selectedFolderId} onSelectFolder={setSelectedFolderId} />
@@ -69,6 +68,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+              <CameraTranslate />
               <ThemeToggle />
               <Button variant="outline" size="sm" onClick={() => setImportExportOpen(true)} className="flex">
                 <Download className="mr-2 h-4 w-4" />
