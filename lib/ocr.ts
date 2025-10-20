@@ -23,15 +23,17 @@ function preprocessImageToBlob(imageUrl: string): Promise<Blob> {
       const canvas = document.createElement("canvas")
       const ctx = canvas.getContext("2d")
       if (!ctx) return reject(new Error("No canvas context"))
-      canvas.width = img.naturalWidth
-      canvas.height = img.naturalHeight
+      // scale up small images to help OCR (up to 2x)
+      const scale = Math.min(2, Math.max(1, 800 / Math.max(img.naturalWidth, img.naturalHeight)))
+      canvas.width = Math.round(img.naturalWidth * scale)
+      canvas.height = Math.round(img.naturalHeight * scale)
 
-      ctx.drawImage(img, 0, 0)
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       const data = imageData.data
 
-      // Simple grayscale + contrast boost for better OCR
-      const contrast = 1.2
+      // Grayscale + stronger contrast + light denoise
+      const contrast = 1.4
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i]
         const g = data[i + 1]
@@ -40,6 +42,10 @@ function preprocessImageToBlob(imageUrl: string): Promise<Blob> {
         v = (v - 128) * contrast + 128
         const clamped = Math.max(0, Math.min(255, v))
         data[i] = data[i + 1] = data[i + 2] = clamped
+        // light threshold to reduce noise
+        if (clamped < 20) {
+          data[i] = data[i + 1] = data[i + 2] = 0
+        }
       }
       ctx.putImageData(imageData, 0, 0)
 

@@ -34,6 +34,9 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     audioUrl: "",
     ttsHint: "ar-SA",
   })
+  const [ocrLang, setOcrLang] = useState<"auto" | "ara" | "nld" | "eng">("auto")
+  const [ocrBusy, setOcrBusy] = useState(false)
+  const [lastOcrFile, setLastOcrFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (card) {
@@ -188,38 +191,93 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                 onChange={async (e) => {
                   const file = e.target.files?.[0]
                   if (!file) return
-                  // Try multiple langs with confidence
-                  const ara = await recognizeTextFromFile(file, "ara").catch(() => ({ text: "", confidence: 0 }))
-                  const nld = await recognizeTextFromFile(file, "nld").catch(() => ({ text: "", confidence: 0 }))
-                  const eng = await recognizeTextFromFile(file, "eng").catch(() => ({ text: "", confidence: 0 }))
-
-                  const candidates = [ara, nld, eng].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
-                  const best = candidates[0]
-                  const text = (best?.text || "").trim()
-
-                  const looksArabic = /[\u0600-\u06FF]/.test(text)
-                  if (looksArabic) {
-                    setFormData((prev) => ({ ...prev, ar: text }))
-                  } else if (best === nld) {
-                    setFormData((prev) => ({ ...prev, nl: text }))
-                  } else if (best === eng) {
-                    setFormData((prev) => ({ ...prev, en: text }))
-                  } else {
-                    // Fallback heuristics
-                    if (text.length <= 32) {
-                      setFormData((prev) => ({ ...prev, nl: text }))
+                  setLastOcrFile(file)
+                  setOcrBusy(true)
+                  try {
+                    if (ocrLang === "auto") {
+                      const ara = await recognizeTextFromFile(file, "ara").catch(() => ({ text: "", confidence: 0 }))
+                      const nld = await recognizeTextFromFile(file, "nld").catch(() => ({ text: "", confidence: 0 }))
+                      const eng = await recognizeTextFromFile(file, "eng").catch(() => ({ text: "", confidence: 0 }))
+                      const candidates = [ara, nld, eng].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+                      const best = candidates[0]
+                      const text = (best?.text || "").trim()
+                      const looksArabic = /[\u0600-\u06FF]/.test(text)
+                      if (looksArabic) {
+                        setFormData((prev) => ({ ...prev, ar: text }))
+                      } else if (best === nld) {
+                        setFormData((prev) => ({ ...prev, nl: text }))
+                      } else if (best === eng) {
+                        setFormData((prev) => ({ ...prev, en: text }))
+                      } else {
+                        if (text.length <= 32) {
+                          setFormData((prev) => ({ ...prev, nl: text }))
+                        } else {
+                          setFormData((prev) => ({ ...prev, en: text }))
+                        }
+                      }
                     } else {
-                      setFormData((prev) => ({ ...prev, en: text }))
+                      const res = await recognizeTextFromFile(file, ocrLang).catch(() => ({ text: "", confidence: 0 }))
+                      const text = (res.text || "").trim()
+                      if (ocrLang === "ara") {
+                        setFormData((prev) => ({ ...prev, ar: text }))
+                      } else if (ocrLang === "nld") {
+                        setFormData((prev) => ({ ...prev, nl: text }))
+                      } else {
+                        setFormData((prev) => ({ ...prev, en: text }))
+                      }
                     }
+                  } finally {
+                    setOcrBusy(false)
                   }
                 }}
               />
-              <Button type="button" variant="outline" className="justify-center">
+              <Button type="button" variant="outline" className="justify-center" disabled={ocrBusy} onClick={async () => {
+                if (!lastOcrFile) return
+                const file = lastOcrFile
+                const looksArabic = (t: string) => /[\u0600-\u06FF]/.test(t)
+                setOcrBusy(true)
+                try {
+                  if (ocrLang === "auto") {
+                    const ara = await recognizeTextFromFile(file, "ara").catch(() => ({ text: "", confidence: 0 }))
+                    const nld = await recognizeTextFromFile(file, "nld").catch(() => ({ text: "", confidence: 0 }))
+                    const eng = await recognizeTextFromFile(file, "eng").catch(() => ({ text: "", confidence: 0 }))
+                    const candidates = [ara, nld, eng].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+                    const best = candidates[0]
+                    const text = (best?.text || "").trim()
+                    if (looksArabic(text)) setFormData((p) => ({ ...p, ar: text }))
+                    else if (best === nld) setFormData((p) => ({ ...p, nl: text }))
+                    else if (best === eng) setFormData((p) => ({ ...p, en: text }))
+                    else setFormData((p) => ({ ...p, nl: text }))
+                  } else {
+                    const res = await recognizeTextFromFile(file, ocrLang).catch(() => ({ text: "", confidence: 0 }))
+                    const text = (res.text || "").trim()
+                    if (ocrLang === "ara") setFormData((p) => ({ ...p, ar: text }))
+                    else if (ocrLang === "nld") setFormData((p) => ({ ...p, nl: text }))
+                    else setFormData((p) => ({ ...p, en: text }))
+                  }
+                } finally {
+                  setOcrBusy(false)
+                }
+              }}>
                 <Camera className="mr-2 h-4 w-4" />
-                Gebruik camera/afbeelding
+                {ocrBusy ? "Bezig..." : "Opnieuw scannen"}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Upload of maak een foto van het woord. We herkennen automatisch de tekst. Resultaat wordt gekozen op hoogste OCR confidence.</p>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs">Taal</Label>
+              <Select value={ocrLang} onValueChange={(v) => setOcrLang(v as any)}>
+                <SelectTrigger className="h-8 w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto (ara/nld/eng)</SelectItem>
+                  <SelectItem value="ara">Arabisch (ara)</SelectItem>
+                  <SelectItem value="nld">Nederlands (nld)</SelectItem>
+                  <SelectItem value="eng">Engels (eng)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">Tip: goede belichting, hoge scherpte en vlakke tekst verbeteren herkenning.</p>
           </div>
 
           <div className="rounded-lg border bg-muted/30 p-4">
