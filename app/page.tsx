@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
       <div className="flex flex-1 flex-col">
         <header className="border-b bg-card">
-          <div className="flex items-center justify-between p-4 md:pl-4 pl-16">
+          <div className="flex items-center justify-between p-4 md:pl-4 pl-4">
             <div className="min-w-0 flex-1">
               <h1 className="text-lg md:text-2xl font-bold truncate">{selectedFolder ? selectedFolder.name : "Alle kaarten"}</h1>
               <p className="text-sm text-muted-foreground">
@@ -70,11 +70,11 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
               <ThemeToggle />
-              <Button variant="outline" size="sm" onClick={() => setImportExportOpen(true)} className="hidden sm:flex">
+              <Button variant="outline" size="sm" onClick={() => setImportExportOpen(true)} className="flex">
                 <Download className="mr-2 h-4 w-4" />
                 <span className="hidden md:inline">Import/Export</span>
               </Button>
-              <Button variant="outline" size="sm" asChild className="hidden sm:flex">
+              <Button variant="outline" size="sm" asChild className="flex">
                 <Link href="/study">
                   <BookOpen className="mr-2 h-4 w-4" />
                   <span className="hidden md:inline">Studeren</span>
