@@ -37,6 +37,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
   const [ocrLang, setOcrLang] = useState<"auto" | "ara" | "nld" | "eng">("auto")
   const [ocrBusy, setOcrBusy] = useState(false)
   const [lastOcrFile, setLastOcrFile] = useState<File | null>(null)
+  const [useCloudOCR, setUseCloudOCR] = useState(false)
 
   useEffect(() => {
     if (card) {
@@ -194,7 +195,19 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                   setLastOcrFile(file)
                   setOcrBusy(true)
                   try {
-                    if (ocrLang === "auto") {
+                    if (useCloudOCR) {
+                      const form = new FormData()
+                      form.append("file", file)
+                      form.append("lang", ocrLang === "auto" ? "auto" : ocrLang)
+                      const res = await fetch("/api/ocr", { method: "POST", body: form })
+                      const data = await res.json()
+                      const text = (data?.text || "").trim()
+                      const looksArabic = /[\u0600-\u06FF]/.test(text)
+                      if (looksArabic) setFormData((p) => ({ ...p, ar: text }))
+                      else if (ocrLang === "nld") setFormData((p) => ({ ...p, nl: text }))
+                      else if (ocrLang === "eng") setFormData((p) => ({ ...p, en: text }))
+                      else setFormData((p) => ({ ...p, nl: text }))
+                    } else if (ocrLang === "auto") {
                       const ara = await recognizeTextFromFile(file, "ara").catch(() => ({ text: "", confidence: 0 }))
                       const nld = await recognizeTextFromFile(file, "nld").catch(() => ({ text: "", confidence: 0 }))
                       const eng = await recognizeTextFromFile(file, "eng").catch(() => ({ text: "", confidence: 0 }))
@@ -237,7 +250,18 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                 const looksArabic = (t: string) => /[\u0600-\u06FF]/.test(t)
                 setOcrBusy(true)
                 try {
-                  if (ocrLang === "auto") {
+                  if (useCloudOCR) {
+                    const form = new FormData()
+                    form.append("file", file)
+                    form.append("lang", ocrLang === "auto" ? "auto" : ocrLang)
+                    const res = await fetch("/api/ocr", { method: "POST", body: form })
+                    const data = await res.json()
+                    const text = (data?.text || "").trim()
+                    if (looksArabic(text)) setFormData((p) => ({ ...p, ar: text }))
+                    else if (ocrLang === "nld") setFormData((p) => ({ ...p, nl: text }))
+                    else if (ocrLang === "eng") setFormData((p) => ({ ...p, en: text }))
+                    else setFormData((p) => ({ ...p, nl: text }))
+                  } else if (ocrLang === "auto") {
                     const ara = await recognizeTextFromFile(file, "ara").catch(() => ({ text: "", confidence: 0 }))
                     const nld = await recognizeTextFromFile(file, "nld").catch(() => ({ text: "", confidence: 0 }))
                     const eng = await recognizeTextFromFile(file, "eng").catch(() => ({ text: "", confidence: 0 }))
@@ -277,6 +301,10 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                   <SelectItem value="eng">Engels (eng)</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="flex items-center gap-2 ml-2">
+                <Label className="text-xs" htmlFor="cloud-ocr">Cloud OCR</Label>
+                <input id="cloud-ocr" type="checkbox" checked={useCloudOCR} onChange={(e) => setUseCloudOCR(e.target.checked)} />
+              </div>
             </div>
             <p className="text-xs text-muted-foreground">Tip: goede belichting, hoge scherpte en vlakke tekst verbeteren herkenning.</p>
           </div>
