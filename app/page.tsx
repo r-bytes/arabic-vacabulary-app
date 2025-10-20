@@ -81,7 +81,7 @@ export default function DashboardPage() {
                 </Link>
               </Button>
               <Button onClick={handleAddCard} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="sm:mr-2 h-4 w-4 flex-shrink-0" />
                 <span className="hidden sm:inline">Nieuwe kaart</span>
               </Button>
             </div>
