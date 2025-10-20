@@ -100,11 +100,13 @@ export default function DashboardPage() {
         </header>
 
         <main className="flex-1 overflow-auto p-6">
-          {selectedFolderId && otherFolders.length > 0 && (
+          {folders.length > 0 && (
             <div className="mb-6">
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground">Sleep kaarten naar een andere map:</h3>
+              <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+                {selectedFolderId ? "Sleep kaarten naar een andere map:" : "Sleep kaarten naar een map:"}
+              </h3>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {otherFolders.map((folder) => (
+                {folders.map((folder) => (
                   <FolderDropZone key={folder.id} folderId={folder.id} folderName={folder.name} />
                 ))}
               </div>

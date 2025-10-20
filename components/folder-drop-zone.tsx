@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { FolderOpen } from "lucide-react"
 import { useVocabStore } from "@/lib/store"
+import { FolderOpen } from "lucide-react"
+import { useState } from "react"
 
 interface FolderDropZoneProps {
   folderId: string
@@ -30,8 +30,13 @@ export function FolderDropZone({ folderId, folderName }: FolderDropZoneProps) {
     setIsDragOver(false)
 
     const cardId = e.dataTransfer.getData("text/plain")
+    console.log("Drop event:", { cardId, folderId, folderName })
+    
     if (cardId) {
+      console.log("Moving card", cardId, "to folder", folderId)
       moveCard(cardId, folderId)
+    } else {
+      console.log("No cardId found in drop data")
     }
   }
 

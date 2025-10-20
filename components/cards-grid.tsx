@@ -92,13 +92,30 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
   }
 
   const handleDragStart = (e: React.DragEvent, cardId: string) => {
+    // Don't start drag if clicking on buttons
+    if ((e.target as HTMLElement).closest('button')) {
+      e.preventDefault()
+      return
+    }
+    
+    console.log("Drag start:", cardId)
     setDraggedCard(cardId)
     e.dataTransfer.effectAllowed = "move"
     e.dataTransfer.setData("text/plain", cardId)
+    
+    // Add visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = "0.5"
+    }
   }
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent) => {
     setDraggedCard(null)
+    
+    // Reset visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = "1"
+    }
   }
 
   if (cards.length === 0) {
@@ -127,23 +144,40 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
                 variant="ghost" 
                 size="icon" 
                 className="h-6 w-6" 
-                onClick={() => playAudio(card)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  playAudio(card)
+                }}
                 disabled={playingAudio === card.id}
               >
                 <Volume2 className={`h-3 w-3 ${playingAudio === card.id ? 'animate-pulse' : ''}`} />
               </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEditCard(card)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6" 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEditCard(card)
+                }}
+              >
                 <Pencil className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 text-destructive hover:text-destructive"
-                onClick={() => handleDeleteClick(card.id)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDeleteClick(card.id)
+                }}
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
-              <div className="flex h-6 w-6 cursor-grab items-center justify-center rounded-md hover:bg-accent active:cursor-grabbing">
+              <div 
+                className="flex h-6 w-6 cursor-grab items-center justify-center rounded-md hover:bg-accent active:cursor-grabbing"
+                onMouseDown={(e) => e.stopPropagation()}
+              >
                 <GripVertical className="h-3 w-3 text-muted-foreground" />
               </div>
             </div>
