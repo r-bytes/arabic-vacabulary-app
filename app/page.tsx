@@ -61,7 +61,7 @@ export default function DashboardPage() {
 
       <div className="flex flex-1 flex-col">
         <header className="border-b bg-card">
-          <div className="flex items-center justify-between p-4 md:pl-4 pl-4">
+          <div className="flex items-center justify-between p-4 md:pl-4 pl-16">
             <div className="min-w-0 flex-1">
               <h1 className="text-lg md:text-2xl font-bold truncate">{selectedFolder ? selectedFolder.name : "Alle kaarten"}</h1>
               <p className="text-sm text-muted-foreground">

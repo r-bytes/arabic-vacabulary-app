@@ -3,14 +3,14 @@
 import type React from "react"
 
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -135,11 +135,11 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
             draggable
             onDragStart={(e) => handleDragStart(e, card.id)}
             onDragEnd={handleDragEnd}
-            className={`group relative rounded-xl border bg-card p-3 md:p-4 shadow-sm transition-all hover:shadow-md ${
+            className={`group relative rounded-xl border bg-card p-3 md:p-4 shadow-sm transition-all hover:shadow-md cursor-pointer ${
               draggedCard === card.id ? "opacity-50" : ""
             }`}
           >
-            <div className="absolute right-2 top-2 flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <div className="absolute right-2 top-2 flex gap-0.5">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -182,8 +182,8 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
               </div>
             </div>
 
-            <div className="mb-3 pr-20 sm:pr-20 md:pr-24">
-              <div dir="rtl" className="text-xl md:text-2xl font-semibold leading-tight text-foreground">
+            <div className="mb-3 pr-24 sm:pr-20 md:pr-24">
+              <div dir="rtl" className="text-left text-xl md:text-2xl font-semibold leading-tight text-foreground">
                 {card.ar || "Geen Arabische tekst"}
               </div>
               {card.translit && <div className="mt-1 text-xs text-muted-foreground">{card.translit}</div>}
