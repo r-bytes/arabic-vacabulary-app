@@ -181,7 +181,7 @@ export function CameraTranslate() {
         variant="ghost"
         size="icon"
         onClick={handleToggle}
-        className="h-9 w-9"
+        className="h-9 w-9 md:hidden"
         title="Camera Vertaling"
       >
         <Camera className="h-4 w-4" />
@@ -189,13 +189,14 @@ export function CameraTranslate() {
       </Button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-black">
+        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
           {/* Video */}
           <video
             ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="w-full h-full object-cover"
             playsInline
             muted
+            autoPlay
           />
 
           {/* Hidden canvas for processing */}
