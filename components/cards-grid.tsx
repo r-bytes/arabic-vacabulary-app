@@ -31,6 +31,7 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
   const [draggedCard, setDraggedCard] = useState<string | null>(null)
   const [playingAudio, setPlayingAudio] = useState<string | null>(null)
 
+
   const playAudio = async (card: Card) => {
     if (playingAudio === card.id) return
 
@@ -98,7 +99,6 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
       return
     }
     
-    console.log("Drag start:", cardId)
     setDraggedCard(cardId)
     e.dataTransfer.effectAllowed = "move"
     e.dataTransfer.setData("text/plain", cardId)
@@ -128,14 +128,14 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {cards.map((card) => (
           <div
             key={card.id}
             draggable
             onDragStart={(e) => handleDragStart(e, card.id)}
             onDragEnd={handleDragEnd}
-            className={`group relative rounded-xl border bg-card p-4 shadow-sm transition-all hover:shadow-md ${
+            className={`group relative rounded-xl border bg-card p-3 md:p-4 shadow-sm transition-all hover:shadow-md ${
               draggedCard === card.id ? "opacity-50" : ""
             }`}
           >
@@ -182,23 +182,26 @@ export function CardsGrid({ cards, onEditCard }: CardsGridProps) {
               </div>
             </div>
 
-            <div className="mb-3 pr-24">
-              <div dir="rtl" className="text-2xl font-semibold leading-tight">
-                {card.ar}
+            <div className="mb-3 pr-20 md:pr-24">
+              <div dir="rtl" className="text-xl md:text-2xl font-semibold leading-tight text-foreground">
+                {card.ar || "Geen Arabische tekst"}
               </div>
               {card.translit && <div className="mt-1 text-xs text-muted-foreground">{card.translit}</div>}
             </div>
 
-            <div className="space-y-1 text-sm">
-              {card.gloss.nl && (
-                <div>
+            <div className="space-y-1 text-xs md:text-sm">
+              {card.gloss?.nl && (
+                <div className="text-foreground">
                   <span className="font-medium text-muted-foreground">NL:</span> {card.gloss.nl}
                 </div>
               )}
-              {card.gloss.en && (
-                <div>
+              {card.gloss?.en && (
+                <div className="text-foreground">
                   <span className="font-medium text-muted-foreground">EN:</span> {card.gloss.en}
                 </div>
+              )}
+              {!card.gloss?.nl && !card.gloss?.en && (
+                <div className="text-muted-foreground text-xs">Geen vertalingen</div>
               )}
             </div>
 

@@ -497,7 +497,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
           </div>
 
           <DialogFooter className="flex justify-between">
-            <Button type="button" variant="ghost" onClick={clearAllFields} className="text-destructive hover:text-destructive">
+            <Button type="button" variant="destructive" onClick={clearAllFields}>
               <RotateCcw className="mr-2 h-4 w-4" />
               Wissen
             </Button>
@@ -605,7 +605,11 @@ function AutoTranslateFields({
               .then((j) => {
                 console.log("AR translation result:", j)
                 if (j?.translatedText) {
-                  onResult({ ar: j.translatedText })
+                  // Clean the translation - remove any English text that might be mixed in
+                  const cleanArabic = j.translatedText.replace(/[a-zA-Z\s\/]+/g, '').trim()
+                  if (cleanArabic) {
+                    onResult({ ar: cleanArabic })
+                  }
                 }
               })
               .catch((e) => console.error("AR translation failed:", e))
@@ -615,7 +619,7 @@ function AutoTranslateFields({
         await Promise.all(promises)
         
         // Auto-fill transliteration if Arabic text is present and transliteration is empty
-        if (value.ar && !value.translit) {
+        if (value.ar && !value.translit && /[\u0600-\u06FF]/.test(value.ar)) {
           const transliteration = transliterateArabic(value.ar)
           if (transliteration) {
             onResult({ translit: transliteration })
@@ -623,7 +627,7 @@ function AutoTranslateFields({
         }
         
         // Auto-add diacritics to Arabic text if it doesn't have them
-        if (value.ar && !value.ar.match(/[\u064B-\u0652\u0670\u0640]/)) {
+        if (value.ar && !value.ar.match(/[\u064B-\u0652\u0670\u0640]/) && /[\u0600-\u06FF]/.test(value.ar)) {
           const arabicWithDiacritics = addDiacriticsToArabic(value.ar)
           if (arabicWithDiacritics !== value.ar) {
             onResult({ ar: arabicWithDiacritics })

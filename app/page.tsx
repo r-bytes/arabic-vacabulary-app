@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [editingCard, setEditingCard] = useState<Card | undefined>(undefined)
   const [importExportOpen, setImportExportOpen] = useState(false)
 
+
   const selectedFolder = folders.find((f) => f.id === selectedFolderId)
 
   const filteredCards = useMemo(() => {
@@ -61,27 +62,27 @@ export default function DashboardPage() {
       <div className="flex flex-1 flex-col">
         <header className="border-b bg-card">
           <div className="flex items-center justify-between p-4 md:pl-4 pl-16">
-            <div>
-              <h1 className="text-2xl font-bold">{selectedFolder ? selectedFolder.name : "Alle kaarten"}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg md:text-2xl font-bold truncate">{selectedFolder ? selectedFolder.name : "Alle kaarten"}</h1>
               <p className="text-sm text-muted-foreground">
                 {filteredCards.length} {filteredCards.length === 1 ? "kaart" : "kaarten"}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
               <ThemeToggle />
-              <Button variant="outline" size="sm" onClick={() => setImportExportOpen(true)}>
+              <Button variant="outline" size="sm" onClick={() => setImportExportOpen(true)} className="hidden sm:flex">
                 <Download className="mr-2 h-4 w-4" />
-                Import/Export
+                <span className="hidden md:inline">Import/Export</span>
               </Button>
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="sm" asChild className="hidden sm:flex">
                 <Link href="/study">
                   <BookOpen className="mr-2 h-4 w-4" />
-                  Studeren
+                  <span className="hidden md:inline">Studeren</span>
                 </Link>
               </Button>
               <Button onClick={handleAddCard} size="sm">
                 <Plus className="mr-2 h-4 w-4" />
-                Nieuwe kaart
+                <span className="hidden sm:inline">Nieuwe kaart</span>
               </Button>
             </div>
           </div>
@@ -93,19 +94,19 @@ export default function DashboardPage() {
                 placeholder="Zoek kaarten..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 text-sm"
               />
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6">
           {folders.length > 0 && (
-            <div className="mb-6">
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+            <div className="mb-4 md:mb-6">
+              <h3 className="mb-3 text-xs md:text-sm font-medium text-muted-foreground">
                 {selectedFolderId ? "Sleep kaarten naar een andere map:" : "Sleep kaarten naar een map:"}
               </h3>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {folders.map((folder) => (
                   <FolderDropZone key={folder.id} folderId={folder.id} folderName={folder.name} />
                 ))}

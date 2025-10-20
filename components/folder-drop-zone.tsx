@@ -30,13 +30,9 @@ export function FolderDropZone({ folderId, folderName }: FolderDropZoneProps) {
     setIsDragOver(false)
 
     const cardId = e.dataTransfer.getData("text/plain")
-    console.log("Drop event:", { cardId, folderId, folderName })
     
     if (cardId) {
-      console.log("Moving card", cardId, "to folder", folderId)
       moveCard(cardId, folderId)
-    } else {
-      console.log("No cardId found in drop data")
     }
   }
 
@@ -45,12 +41,12 @@ export function FolderDropZone({ folderId, folderName }: FolderDropZoneProps) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex items-center gap-2 rounded-lg border-2 border-dashed p-3 transition-colors ${
+      className={`flex items-center gap-2 rounded-lg border-2 border-dashed p-2 md:p-3 transition-colors ${
         isDragOver ? "border-primary bg-primary/10" : "border-muted-foreground/25"
       }`}
     >
-      <FolderOpen className="h-4 w-4 text-muted-foreground" />
-      <span className="text-sm font-medium">{folderName}</span>
+      <FolderOpen className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
+      <span className="text-xs md:text-sm font-medium truncate">{folderName}</span>
     </div>
   )
 }
