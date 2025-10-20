@@ -1,16 +1,16 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { useRouter } from "next/navigation"
-import { useVocabStore } from "@/lib/store"
-import { isDue } from "@/lib/srs"
-import { StudyControls } from "@/components/study-controls"
 import { FlashcardSession } from "@/components/flashcard-session"
-import { QuizSession } from "@/components/quiz-session"
 import { MemoryGame } from "@/components/memory-game"
+import { QuizSession } from "@/components/quiz-session"
+import { StudyControls } from "@/components/study-controls"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { isDue } from "@/lib/srs"
+import { useVocabStore } from "@/lib/store"
 import { ArrowLeft } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useMemo, useState } from "react"
 
 export default function StudyPage() {
   const router = useRouter()
@@ -64,56 +64,56 @@ export default function StudyPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Studeren</h1>
+            <h1 className="text-xl font-bold md:text-2xl">Studeren</h1>
             <p className="text-sm text-muted-foreground">Kies je mappen en studeer modus</p>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto p-6">
+      <main className="container mx-auto p-4 md:p-6">
         <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
-          <aside>
+          <aside className="order-2 lg:order-1">
             <StudyControls onStartSession={handleStartSession} />
           </aside>
 
-          <div>
+          <div className="order-1 lg:order-2">
             <Tabs value={activeMode} onValueChange={(value) => setActiveMode(value as typeof activeMode)}>
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="flashcards">Flashcards</TabsTrigger>
-                <TabsTrigger value="quiz">Quiz</TabsTrigger>
-                <TabsTrigger value="memory">Memory</TabsTrigger>
+                <TabsTrigger value="flashcards" className="text-xs md:text-sm">Flashcards</TabsTrigger>
+                <TabsTrigger value="quiz" className="text-xs md:text-sm">Quiz</TabsTrigger>
+                <TabsTrigger value="memory" className="text-xs md:text-sm">Memory</TabsTrigger>
               </TabsList>
 
               <TabsContent value="flashcards" className="mt-6">
-                <div className="rounded-lg border bg-card p-8 text-center">
-                  <h2 className="mb-2 text-xl font-semibold">Flashcards</h2>
-                  <p className="mb-6 text-muted-foreground">
+                <div className="rounded-lg border bg-card p-4 md:p-8 text-center">
+                  <h2 className="mb-2 text-lg md:text-xl font-semibold">Flashcards</h2>
+                  <p className="mb-6 text-sm md:text-base text-muted-foreground">
                     Leer woordenschat met flashcards. Draai de kaart om het antwoord te zien en beoordeel hoe goed je
                     het wist.
                   </p>
                   <div className="space-y-4">
                     <div className="grid gap-4 text-left sm:grid-cols-2">
-                      <div className="rounded-lg border p-4">
-                        <div className="mb-2 font-medium">Toetsenbord sneltoetsen</div>
-                        <ul className="space-y-1 text-sm text-muted-foreground">
+                      <div className="rounded-lg border p-3 md:p-4">
+                        <div className="mb-2 text-sm md:text-base font-medium">Toetsenbord sneltoetsen</div>
+                        <ul className="space-y-1 text-xs md:text-sm text-muted-foreground">
                           <li>
-                            <kbd className="rounded bg-muted px-2 py-1">Spatie</kbd> - Draai kaart
+                            <kbd className="rounded bg-muted px-1 md:px-2 py-1 text-xs">Spatie</kbd> - Draai kaart
                           </li>
                           <li>
-                            <kbd className="rounded bg-muted px-2 py-1">←</kbd> /{" "}
-                            <kbd className="rounded bg-muted px-2 py-1">→</kbd> - Vorige/Volgende
+                            <kbd className="rounded bg-muted px-1 md:px-2 py-1 text-xs">←</kbd> /{" "}
+                            <kbd className="rounded bg-muted px-1 md:px-2 py-1 text-xs">→</kbd> - Vorige/Volgende
                           </li>
                           <li>
-                            <kbd className="rounded bg-muted px-2 py-1">1-5</kbd> - Beoordeel kaart
+                            <kbd className="rounded bg-muted px-1 md:px-2 py-1 text-xs">1-5</kbd> - Beoordeel kaart
                           </li>
                           <li>
-                            <kbd className="rounded bg-muted px-2 py-1">Esc</kbd> - Sluit sessie
+                            <kbd className="rounded bg-muted px-1 md:px-2 py-1 text-xs">Esc</kbd> - Sluit sessie
                           </li>
                         </ul>
                       </div>
-                      <div className="rounded-lg border p-4">
-                        <div className="mb-2 font-medium">Spaced Repetition</div>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="rounded-lg border p-3 md:p-4">
+                        <div className="mb-2 text-sm md:text-base font-medium">Spaced Repetition</div>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           Kaarten die je moeilijk vindt komen vaker terug. Beoordeel eerlijk voor het beste resultaat!
                         </p>
                       </div>
@@ -123,22 +123,22 @@ export default function StudyPage() {
               </TabsContent>
 
               <TabsContent value="quiz" className="mt-6">
-                <div className="rounded-lg border bg-card p-8 text-center">
-                  <h2 className="mb-2 text-xl font-semibold">Quiz</h2>
-                  <p className="mb-6 text-muted-foreground">
+                <div className="rounded-lg border bg-card p-4 md:p-8 text-center">
+                  <h2 className="mb-2 text-lg md:text-xl font-semibold">Quiz</h2>
+                  <p className="mb-6 text-sm md:text-base text-muted-foreground">
                     Test je kennis met meerkeuze vragen of typ de antwoorden zelf.
                   </p>
                   <div className="space-y-4">
                     <div className="grid gap-4 text-left sm:grid-cols-2">
-                      <div className="rounded-lg border p-4">
-                        <div className="mb-2 font-medium">Meerkeuze</div>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="rounded-lg border p-3 md:p-4">
+                        <div className="mb-2 text-sm md:text-base font-medium">Meerkeuze</div>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           Kies het juiste antwoord uit 4 opties. Krijg direct feedback na elk antwoord.
                         </p>
                       </div>
-                      <div className="rounded-lg border p-4">
-                        <div className="mb-2 font-medium">Typen</div>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="rounded-lg border p-3 md:p-4">
+                        <div className="mb-2 text-sm md:text-base font-medium">Typen</div>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           Typ het antwoord zelf. Diacrieten worden genegeerd voor Arabisch.
                         </p>
                       </div>
@@ -148,30 +148,30 @@ export default function StudyPage() {
               </TabsContent>
 
               <TabsContent value="memory" className="mt-6">
-                <div className="rounded-lg border bg-card p-8 text-center">
-                  <h2 className="mb-2 text-xl font-semibold">Memory</h2>
-                  <p className="mb-6 text-muted-foreground">
+                <div className="rounded-lg border bg-card p-4 md:p-8 text-center">
+                  <h2 className="mb-2 text-lg md:text-xl font-semibold">Memory</h2>
+                  <p className="mb-6 text-sm md:text-base text-muted-foreground">
                     Vind alle paren van Arabische woorden en hun vertalingen. Train je geheugen en woordenschat
                     tegelijk!
                   </p>
                   <div className="space-y-4">
                     <div className="grid gap-4 text-left sm:grid-cols-2">
-                      <div className="rounded-lg border p-4">
-                        <div className="mb-2 font-medium">Hoe te spelen</div>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="rounded-lg border p-3 md:p-4">
+                        <div className="mb-2 text-sm md:text-base font-medium">Hoe te spelen</div>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           Klik op twee tegels om ze om te draaien. Vind het Arabische woord en de bijbehorende
                           vertaling.
                         </p>
                       </div>
-                      <div className="rounded-lg border p-4">
-                        <div className="mb-2 font-medium">Uitdaging</div>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="rounded-lg border p-3 md:p-4">
+                        <div className="mb-2 text-sm md:text-base font-medium">Uitdaging</div>
+                        <p className="text-xs md:text-sm text-muted-foreground">
                           Probeer alle paren te vinden in zo min mogelijk pogingen en tijd!
                         </p>
                       </div>
                     </div>
                     {sessionCards.length > 12 && (
-                      <div className="rounded-lg border border-yellow-500/50 bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                      <div className="rounded-lg border border-yellow-500/50 bg-yellow-50 p-3 text-xs md:text-sm text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
                         Let op: Memory spel gebruikt maximaal 12 kaarten (24 tegels) per sessie.
                       </div>
                     )}

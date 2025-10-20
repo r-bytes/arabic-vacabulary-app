@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { ImportExportDialog } from "@/components/import-export-dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ImportExportDialog } from "@/components/import-export-dialog"
 import { ArrowLeft, Download, Volume2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -31,21 +31,21 @@ export default function SettingsPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Instellingen</h1>
+            <h1 className="text-xl md:text-2xl font-bold">Instellingen</h1>
             <p className="text-sm text-muted-foreground">Beheer je voorkeuren en data</p>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto max-w-2xl p-6">
-        <div className="space-y-6">
-          <section className="rounded-lg border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold">Audio Instellingen</h2>
+      <main className="container mx-auto max-w-2xl p-4 md:p-6">
+        <div className="space-y-4 md:space-y-6">
+          <section className="rounded-lg border bg-card p-4 md:p-6">
+            <h2 className="mb-4 text-base md:text-lg font-semibold">Audio Instellingen</h2>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="tts-lang">Standaard TTS Taal</Label>
+                <Label htmlFor="tts-lang" className="text-sm">Standaard TTS Taal</Label>
                 <Select value={ttsLang} onValueChange={setTtsLang}>
-                  <SelectTrigger id="tts-lang">
+                  <SelectTrigger id="tts-lang" className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -57,9 +57,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="tts-rate">Spraaksnelheid</Label>
+                <Label htmlFor="tts-rate" className="text-sm">Spraaksnelheid</Label>
                 <Select value={ttsRate} onValueChange={setTtsRate}>
-                  <SelectTrigger id="tts-rate">
+                  <SelectTrigger id="tts-rate" className="text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -70,22 +70,22 @@ export default function SettingsPage() {
                 </Select>
               </div>
 
-              <Button onClick={handleTestTTS} variant="outline" className="w-full bg-transparent">
+              <Button onClick={handleTestTTS} variant="outline" className="w-full bg-transparent text-sm">
                 <Volume2 className="mr-2 h-4 w-4" />
                 Test spraak
               </Button>
             </div>
           </section>
 
-          <section className="rounded-lg border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold">Data Beheer</h2>
+          <section className="rounded-lg border bg-card p-4 md:p-6">
+            <h2 className="mb-4 text-base md:text-lg font-semibold">Data Beheer</h2>
             <div className="space-y-4">
               <div>
-                <h3 className="mb-2 font-medium">Backup & Herstel</h3>
-                <p className="mb-3 text-sm text-muted-foreground">
+                <h3 className="mb-2 text-sm md:text-base font-medium">Backup & Herstel</h3>
+                <p className="mb-3 text-xs md:text-sm text-muted-foreground">
                   Exporteer je data voor een backup of importeer eerder opgeslagen data.
                 </p>
-                <Button onClick={() => setImportExportOpen(true)} variant="outline" className="w-full">
+                <Button onClick={() => setImportExportOpen(true)} variant="outline" className="w-full text-sm">
                   <Download className="mr-2 h-4 w-4" />
                   Import/Export Data
                 </Button>
@@ -93,9 +93,9 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className="rounded-lg border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold">Over</h2>
-            <div className="space-y-2 text-sm text-muted-foreground">
+          <section className="rounded-lg border bg-card p-4 md:p-6">
+            <h2 className="mb-4 text-base md:text-lg font-semibold">Over</h2>
+            <div className="space-y-2 text-xs md:text-sm text-muted-foreground">
               <p>
                 <strong>Versie:</strong> 1.0.0
               </p>
