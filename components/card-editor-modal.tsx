@@ -265,6 +265,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             </div>
             <div className="flex items-center gap-2">
               <Label className="text-xs">Taal</Label>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               <Select value={ocrLang} onValueChange={(v) => setOcrLang(v as any)}>
                 <SelectTrigger className="h-8 w-[140px]">
                   <SelectValue />
