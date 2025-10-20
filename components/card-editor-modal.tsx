@@ -496,16 +496,18 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             </div>
           </div>
 
-          <DialogFooter className="flex justify-between">
-            <Button type="button" variant="destructive" onClick={clearAllFields}>
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Wissen
-            </Button>
+          <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+            <div className="flex justify-center sm:justify-start">
+              <Button type="button" variant="destructive" onClick={clearAllFields} className="w-full sm:w-auto">
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Wissen
+              </Button>
+            </div>
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
                 Annuleren
               </Button>
-              <Button type="submit" disabled={!formData.ar || !formData.folderId}>
+              <Button type="submit" disabled={!formData.ar || !formData.folderId} className="flex-1 sm:flex-none">
                 {card ? "Opslaan" : "Toevoegen"}
               </Button>
             </div>
