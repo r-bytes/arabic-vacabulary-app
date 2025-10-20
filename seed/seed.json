@@ -1,0 +1,136 @@
+{
+  "folders": [
+    {
+      "id": "folder-1",
+      "name": "week1",
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "folder-2",
+      "name": "les1",
+      "createdAt": "2025-01-02T00:00:00.000Z"
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-1",
+      "ar": "كِتاب",
+      "translit": "kitāb",
+      "gloss": {
+        "nl": "boek",
+        "en": "book"
+      },
+      "tags": ["noun"],
+      "folderId": "folder-1",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-2",
+      "ar": "مَدْرَسَة",
+      "translit": "madrasa",
+      "gloss": {
+        "nl": "school",
+        "en": "school"
+      },
+      "tags": ["noun", "place"],
+      "folderId": "folder-1",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-3",
+      "ar": "قَلَم",
+      "translit": "qalam",
+      "gloss": {
+        "nl": "pen",
+        "en": "pen"
+      },
+      "tags": ["noun"],
+      "folderId": "folder-1",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-4",
+      "ar": "بَيْت",
+      "translit": "bayt",
+      "gloss": {
+        "nl": "huis",
+        "en": "house"
+      },
+      "tags": ["noun", "place"],
+      "folderId": "folder-1",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-5",
+      "ar": "مُعَلِّم",
+      "translit": "muʿallim",
+      "gloss": {
+        "nl": "leraar",
+        "en": "teacher"
+      },
+      "tags": ["noun", "person"],
+      "folderId": "folder-2",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-6",
+      "ar": "طالِب",
+      "translit": "ṭālib",
+      "gloss": {
+        "nl": "student",
+        "en": "student"
+      },
+      "tags": ["noun", "person"],
+      "folderId": "folder-2",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-7",
+      "ar": "كُرْسِيّ",
+      "translit": "kursī",
+      "gloss": {
+        "nl": "stoel",
+        "en": "chair"
+      },
+      "tags": ["noun"],
+      "folderId": "folder-2",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-8",
+      "ar": "بَاب",
+      "translit": "bāb",
+      "gloss": {
+        "nl": "deur",
+        "en": "door"
+      },
+      "tags": ["noun"],
+      "folderId": "folder-2",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-9",
+      "ar": "نافِذَة",
+      "translit": "nāfiḏa",
+      "gloss": {
+        "nl": "raam",
+        "en": "window"
+      },
+      "tags": ["noun"],
+      "folderId": "folder-2",
+      "ttsHint": "ar-SA"
+    },
+    {
+      "id": "card-10",
+      "ar": "سَبُّورَة",
+      "translit": "sabbūra",
+      "gloss": {
+        "nl": "schoolbord",
+        "en": "blackboard"
+      },
+      "tags": ["noun"],
+      "folderId": "folder-2",
+      "ttsHint": "ar-SA"
+    }
+  ]
+}
