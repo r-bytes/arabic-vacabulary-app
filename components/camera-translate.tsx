@@ -150,7 +150,7 @@ export function CameraTranslate() {
               // Translate with timeout
               console.log("🌐 Translating text...")
               const controller = new AbortController()
-              const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+              const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout for faster response
               
               const translateRes = await fetch("/api/translate", {
                 method: "POST",
@@ -193,6 +193,8 @@ export function CameraTranslate() {
         console.log("⚠️ No text detected or text too short")
         // Clear processing state when no text is detected
         setIsProcessing(false)
+        // Clear last processed text so it can be processed again if detected
+        lastProcessedText.current = ""
         // Don't clear existing text immediately, give user time to see it
       }
     } catch (err) {
@@ -200,10 +202,7 @@ export function CameraTranslate() {
       setError("Verwerking mislukt. Probeer opnieuw.")
     } finally {
       processingRef.current = false
-      // Only clear processing state if we're not in the middle of processing
-      if (!processingRef.current) {
-        setIsProcessing(false)
-      }
+      setIsProcessing(false)
     }
   }, [])
 
@@ -221,7 +220,7 @@ export function CameraTranslate() {
       if (isOpenRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
-        }, 2000) // Every 2 seconds for faster initial response
+        }, 1000) // Every 1 second for much faster response
       }
     }
 
@@ -295,20 +294,20 @@ export function CameraTranslate() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {isProcessing && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      processingRef.current = false
-                      setIsProcessing(false)
-                    }}
-                    className="text-white hover:bg-white/20"
-                    title="Stop verwerken"
-                  >
-                    <Square className="h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    processingRef.current = false
+                    setIsProcessing(false)
+                    setTranslatedText("")
+                    setDetectedText("")
+                  }}
+                  className="text-white hover:bg-white/20"
+                  title="Stop verwerken"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
