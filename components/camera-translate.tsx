@@ -195,6 +195,8 @@ export function CameraTranslate() {
         setIsProcessing(false)
         // Clear last processed text so it can be processed again if detected
         lastProcessedText.current = ""
+        // Stop processing completely when no text is detected
+        processingRef.current = false
         // Don't clear existing text immediately, give user time to see it
       }
     } catch (err) {
@@ -216,8 +218,8 @@ export function CameraTranslate() {
     const doProcess = async () => {
       await captureAndProcess()
       
-      // Schedule next process
-      if (isOpenRef.current) {
+      // Schedule next process only if we're still processing
+      if (isOpenRef.current && processingRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
         }, 1000) // Every 1 second for much faster response
@@ -300,8 +302,7 @@ export function CameraTranslate() {
                   onClick={() => {
                     processingRef.current = false
                     setIsProcessing(false)
-                    setTranslatedText("")
-                    setDetectedText("")
+                    // DON'T clear the text - keep the translation visible
                   }}
                   className="text-white hover:bg-white/20"
                   title="Stop verwerken"
