@@ -102,22 +102,18 @@ export function CameraTranslate() {
       formData.append("file", blob, "frame.jpg")
       formData.append("lang", "ara") // Arabic
 
-      console.log("🔍 Sending OCR request...")
       const ocrRes = await fetch("/api/ocr", {
         method: "POST",
         body: formData,
       })
 
       if (!ocrRes.ok) {
-        console.error("❌ OCR failed:", ocrRes.status, ocrRes.statusText)
         throw new Error("OCR failed")
       }
 
       const ocrData = await ocrRes.json()
-      console.log("📝 OCR result:", ocrData)
       
       let text = ocrData.text?.trim()
-      console.log("📄 Raw detected text:", text)
 
       // Clean up the text - remove common OCR errors
       if (text) {
@@ -132,8 +128,6 @@ export function CameraTranslate() {
         const words = text.split(' ').filter((word: any) => word.length > 1)
         text = words.join(' ')
       }
-      
-      console.log("📄 Cleaned text:", text)
 
       if (text && text.length > 2) { // Minimum 3 characters for Arabic
         // Only process if text is different from last processed
@@ -144,12 +138,10 @@ export function CameraTranslate() {
           // Check cache first
           const cachedTranslation = translationCache.current.get(text)
           if (cachedTranslation) {
-            console.log("💾 Using cached translation")
             setTranslatedText(cachedTranslation)
           } else {
             try {
               // Translate with timeout
-              console.log("🌐 Translating text...")
               const controller = new AbortController()
               const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout for faster response
               
@@ -168,30 +160,24 @@ export function CameraTranslate() {
 
               if (translateRes.ok) {
                 const translateData = await translateRes.json()
-                console.log("✅ Translation result:", translateData)
                 const translation = translateData.translatedText || ""
                 setTranslatedText(translation)
                 // Cache the translation
                 translationCache.current.set(text, translation)
               } else {
-                console.error("❌ Translation failed:", translateRes.status)
                 setTranslatedText("Vertaling mislukt")
               }
             } catch (translateErr) {
               if ((translateErr as Error).name === 'AbortError') {
-                console.error("⏰ Translation timeout")
                 setTranslatedText("Vertaling timeout")
               } else {
-                console.error("❌ Translation error:", translateErr)
                 setTranslatedText("Vertaling mislukt")
               }
             }
           }
         } else {
-          console.log("🔄 Same text detected, skipping translation")
         }
       } else {
-        console.log("⚠️ No text detected or text too short")
         // Clear processing state when no text is detected
         setIsProcessing(false)
         // Clear last processed text so it can be processed again if detected
@@ -199,7 +185,6 @@ export function CameraTranslate() {
         // Don't clear existing text immediately, give user time to see it
       }
     } catch (err) {
-      console.error("❌ Processing error:", err)
       setError("Verwerking mislukt. Probeer opnieuw.")
     } finally {
       processingRef.current = false
@@ -253,7 +238,6 @@ export function CameraTranslate() {
       setCopySuccess(true)
       setTimeout(() => setCopySuccess(false), 2000) // Reset after 2 seconds
     } catch (err) {
-      console.error('Failed to copy text:', err)
     }
   }
 
