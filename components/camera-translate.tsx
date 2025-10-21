@@ -122,7 +122,8 @@ export function CameraTranslate() {
           .trim()
         
         // Remove single characters that are likely OCR errors
-        const words = text.split(' ').filter(word => word.length > 1)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const words = text.split(' ').filter((word: any) => word.length > 1)
         text = words.join(' ')
       }
       
