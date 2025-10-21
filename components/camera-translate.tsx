@@ -56,8 +56,9 @@ export function CameraTranslate() {
       }
       
       setIsLoading(false)
-      // DON'T start processing automatically - user must click start button
-      // onReady()
+      // Start processing automatically the first time
+      processingRef.current = true
+      onReady()
     } catch {
       setError("Kan camera niet openen. Controleer de permissies.")
       setIsLoading(false)
@@ -220,7 +221,7 @@ export function CameraTranslate() {
       if (isOpenRef.current && processingRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
-        }, 1500) // Every 1.5 seconds - less aggressive
+        }, 1000) // Every 1 second for faster response
       }
     }
 
