@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { recognizeTextFromFile } from "@/lib/ocr"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { Camera, RotateCcw } from "lucide-react"
+import { Camera, Clipboard, RotateCcw } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Enhanced Arabic to Latin transliteration with diacritics
@@ -169,6 +169,18 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
   const [useCloudOCR, setUseCloudOCR] = useState(true)
   const [autoTranslate, setAutoTranslate] = useState(true)
 
+  // Paste functionality
+  const handlePaste = async (field: 'ar' | 'nl' | 'en') => {
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text.trim()) {
+        setFormData(prev => ({ ...prev, [field]: text.trim() }))
+      }
+    } catch (err) {
+      console.error('Failed to read clipboard:', err)
+    }
+  }
+
   useEffect(() => {
     if (card) {
       setFormData({
@@ -250,7 +262,19 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             <h3 className="text-sm font-semibold text-foreground">Inhoud</h3>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="ar" className="font-semibold text-foreground">Arabisch *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="ar" className="font-semibold text-foreground">Arabisch *</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePaste('ar')}
+                    className="h-8 px-2"
+                  >
+                    <Clipboard className="h-3 w-3 mr-1" />
+                    Plak
+                  </Button>
+                </div>
                 <Textarea
                   id="ar"
                   dir="rtl"
@@ -275,7 +299,19 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="nl" className="font-semibold text-foreground">Nederlands</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="nl" className="font-semibold text-foreground">Nederlands</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePaste('nl')}
+                    className="h-8 px-2"
+                  >
+                    <Clipboard className="h-3 w-3 mr-1" />
+                    Plak
+                  </Button>
+                </div>
                 <Input
                   id="nl"
                   value={formData.nl}
@@ -284,7 +320,19 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="en" className="font-semibold text-foreground">Engels</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="en" className="font-semibold text-foreground">Engels</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePaste('en')}
+                    className="h-8 px-2"
+                  >
+                    <Clipboard className="h-3 w-3 mr-1" />
+                    Plak
+                  </Button>
+                </div>
                 <Input
                   id="en"
                   value={formData.en}
