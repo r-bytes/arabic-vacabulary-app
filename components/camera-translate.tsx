@@ -19,6 +19,7 @@ export function CameraTranslate() {
   const timeoutRef = useRef<NodeJS.Timeout>()
   const isOpenRef = useRef(isOpen)
   const lastProcessedText = useRef<string>("")
+  const translationCache = useRef<Map<string, string>>(new Map())
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -28,6 +29,9 @@ export function CameraTranslate() {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
+    // Clear cache when camera stops
+    translationCache.current.clear()
+    lastProcessedText.current = ""
   }, [])
 
   const startCamera = useCallback(async (onReady: () => void) => {
@@ -135,25 +139,35 @@ export function CameraTranslate() {
           lastProcessedText.current = text
           setDetectedText(text)
 
-          // Translate
-          console.log("🌐 Translating text...")
-          const translateRes = await fetch("/api/translate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text,
-              source: "ar",
-              target: "nl",
-            }),
-          })
-
-          if (translateRes.ok) {
-            const translateData = await translateRes.json()
-            console.log("✅ Translation result:", translateData)
-            setTranslatedText(translateData.translatedText || "")
+          // Check cache first
+          const cachedTranslation = translationCache.current.get(text)
+          if (cachedTranslation) {
+            console.log("💾 Using cached translation")
+            setTranslatedText(cachedTranslation)
           } else {
-            console.error("❌ Translation failed:", translateRes.status)
-            setTranslatedText("Vertaling mislukt")
+            // Translate
+            console.log("🌐 Translating text...")
+            const translateRes = await fetch("/api/translate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                text,
+                source: "ar",
+                target: "nl",
+              }),
+            })
+
+            if (translateRes.ok) {
+              const translateData = await translateRes.json()
+              console.log("✅ Translation result:", translateData)
+              const translation = translateData.translatedText || ""
+              setTranslatedText(translation)
+              // Cache the translation
+              translationCache.current.set(text, translation)
+            } else {
+              console.error("❌ Translation failed:", translateRes.status)
+              setTranslatedText("Vertaling mislukt")
+            }
           }
         } else {
           console.log("🔄 Same text detected, skipping translation")
@@ -294,9 +308,9 @@ export function CameraTranslate() {
                   </div>
                 )}
                 {translatedText && (
-                  <div className="bg-blue-600 rounded-2xl p-4 shadow-2xl">
-                    <p className="text-blue-100 text-xs mb-2 font-medium">Vertaling</p>
-                    <p className="text-white text-2xl font-semibold leading-relaxed">
+                  <div className="bg-primary rounded-2xl p-4 shadow-2xl">
+                    <p className="text-primary-foreground/90 text-xs mb-2 font-medium">Vertaling</p>
+                    <p className="text-primary-foreground text-2xl font-semibold leading-relaxed">
                       {translatedText}
                     </p>
                   </div>
@@ -304,7 +318,7 @@ export function CameraTranslate() {
                 {isProcessing && (
                   <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg">
                     <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       <p className="text-gray-700 text-sm">Verwerken...</p>
                     </div>
                   </div>
