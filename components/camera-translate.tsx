@@ -18,6 +18,7 @@ export function CameraTranslate() {
   const processingRef = useRef(false)
   const timeoutRef = useRef<NodeJS.Timeout>()
   const isOpenRef = useRef(isOpen)
+  const lastProcessedText = useRef<string>("")
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -109,31 +110,52 @@ export function CameraTranslate() {
       const ocrData = await ocrRes.json()
       console.log("📝 OCR result:", ocrData)
       
-      const text = ocrData.text?.trim()
-      console.log("📄 Detected text:", text)
+      let text = ocrData.text?.trim()
+      console.log("📄 Raw detected text:", text)
 
-      if (text && text.length > 1) { // Reduced minimum length
-        setDetectedText(text)
+      // Clean up the text - remove common OCR errors
+      if (text) {
+        // Remove common OCR artifacts
+        text = text
+          .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s]/g, '') // Keep only Arabic characters and spaces
+          .replace(/\s+/g, ' ') // Normalize spaces
+          .trim()
+        
+        // Remove single characters that are likely OCR errors
+        const words = text.split(' ').filter(word => word.length > 1)
+        text = words.join(' ')
+      }
+      
+      console.log("📄 Cleaned text:", text)
 
-        // Translate
-        console.log("🌐 Translating text...")
-        const translateRes = await fetch("/api/translate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text,
-            source: "ar",
-            target: "nl",
-          }),
-        })
+      if (text && text.length > 2) { // Minimum 3 characters for Arabic
+        // Only process if text is different from last processed
+        if (text !== lastProcessedText.current) {
+          lastProcessedText.current = text
+          setDetectedText(text)
 
-        if (translateRes.ok) {
-          const translateData = await translateRes.json()
-          console.log("✅ Translation result:", translateData)
-          setTranslatedText(translateData.translatedText || "")
+          // Translate
+          console.log("🌐 Translating text...")
+          const translateRes = await fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text,
+              source: "ar",
+              target: "nl",
+            }),
+          })
+
+          if (translateRes.ok) {
+            const translateData = await translateRes.json()
+            console.log("✅ Translation result:", translateData)
+            setTranslatedText(translateData.translatedText || "")
+          } else {
+            console.error("❌ Translation failed:", translateRes.status)
+            setTranslatedText("Vertaling mislukt")
+          }
         } else {
-          console.error("❌ Translation failed:", translateRes.status)
-          setTranslatedText("Vertaling mislukt")
+          console.log("🔄 Same text detected, skipping translation")
         }
       } else {
         console.log("⚠️ No text detected or text too short")
@@ -162,7 +184,7 @@ export function CameraTranslate() {
       if (isOpenRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
-        }, 1500) // Every 1.5 seconds for faster response
+        }, 3000) // Every 3 seconds to avoid too frequent processing
       }
     }
 
@@ -260,29 +282,29 @@ export function CameraTranslate() {
 
           {/* Translation overlay */}
           {(translatedText || detectedText) && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/85 to-transparent p-4">
-              <div className="space-y-3 max-w-4xl mx-auto">
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <div className="max-w-md mx-auto space-y-4">
                 {detectedText && (
-                  <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/30 shadow-lg">
-                    <p className="text-white/80 text-xs mb-2 font-medium uppercase tracking-wide">Gedetecteerde tekst</p>
-                    <p className="text-white text-xl font-arabic leading-relaxed" dir="rtl">
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-2xl border border-white/20">
+                    <p className="text-gray-600 text-xs mb-2 font-medium">Gedetecteerd</p>
+                    <p className="text-gray-900 text-2xl font-arabic leading-relaxed" dir="rtl">
                       {detectedText}
                     </p>
                   </div>
                 )}
                 {translatedText && (
-                  <div className="bg-gradient-to-r from-blue-600/95 to-blue-500/95 backdrop-blur-md rounded-xl p-4 border border-blue-400/40 shadow-lg">
-                    <p className="text-white/90 text-xs mb-2 font-medium uppercase tracking-wide">Vertaling</p>
+                  <div className="bg-blue-600 rounded-2xl p-4 shadow-2xl">
+                    <p className="text-blue-100 text-xs mb-2 font-medium">Vertaling</p>
                     <p className="text-white text-2xl font-semibold leading-relaxed">
                       {translatedText}
                     </p>
                   </div>
                 )}
                 {isProcessing && (
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-white" />
-                      <p className="text-white/80 text-sm">Verwerken...</p>
+                  <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <p className="text-gray-700 text-sm">Verwerken...</p>
                     </div>
                   </div>
                 )}
@@ -292,14 +314,17 @@ export function CameraTranslate() {
 
           {/* Instructions */}
           {!translatedText && !detectedText && !isLoading && !error && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 max-w-2xl mx-auto">
-                <p className="text-white text-center text-sm mb-2">
-                  📱 Richt de camera op Arabische tekst
-                </p>
-                <p className="text-white/70 text-center text-xs">
-                  Zorg voor goede verlichting en houd de camera stil
-                </p>
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-2xl max-w-sm mx-auto">
+                <div className="text-center">
+                  <div className="text-4xl mb-3">📱</div>
+                  <p className="text-gray-800 text-sm font-medium mb-1">
+                    Richt camera op Arabische tekst
+                  </p>
+                  <p className="text-gray-600 text-xs">
+                    Goede verlichting • Camera stil houden
+                  </p>
+                </div>
               </div>
             </div>
           )}
