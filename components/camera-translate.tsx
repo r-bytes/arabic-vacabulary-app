@@ -58,7 +58,7 @@ export function CameraTranslate() {
       setIsLoading(false)
       // Start processing after camera is ready
       onReady()
-    } catch (err) {
+    } catch {
       setError("Kan camera niet openen. Controleer de permissies.")
       setIsLoading(false)
     }
@@ -146,42 +146,44 @@ export function CameraTranslate() {
             console.log("💾 Using cached translation")
             setTranslatedText(cachedTranslation)
           } else {
-            // Translate with timeout
-            console.log("🌐 Translating text...")
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-            
-            const translateRes = await fetch("/api/translate", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                text,
-                source: "ar",
-                target: "nl",
-              }),
-              signal: controller.signal,
-            })
-            
-            clearTimeout(timeoutId)
+            try {
+              // Translate with timeout
+              console.log("🌐 Translating text...")
+              const controller = new AbortController()
+              const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+              
+              const translateRes = await fetch("/api/translate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  text,
+                  source: "ar",
+                  target: "nl",
+                }),
+                signal: controller.signal,
+              })
+              
+              clearTimeout(timeoutId)
 
-            if (translateRes.ok) {
-              const translateData = await translateRes.json()
-              console.log("✅ Translation result:", translateData)
-              const translation = translateData.translatedText || ""
-              setTranslatedText(translation)
-              // Cache the translation
-              translationCache.current.set(text, translation)
-            } else {
-              console.error("❌ Translation failed:", translateRes.status)
-              setTranslatedText("Vertaling mislukt")
-            }
-          } catch (translateErr) {
-            if (translateErr.name === 'AbortError') {
-              console.error("⏰ Translation timeout")
-              setTranslatedText("Vertaling timeout")
-            } else {
-              console.error("❌ Translation error:", translateErr)
-              setTranslatedText("Vertaling mislukt")
+              if (translateRes.ok) {
+                const translateData = await translateRes.json()
+                console.log("✅ Translation result:", translateData)
+                const translation = translateData.translatedText || ""
+                setTranslatedText(translation)
+                // Cache the translation
+                translationCache.current.set(text, translation)
+              } else {
+                console.error("❌ Translation failed:", translateRes.status)
+                setTranslatedText("Vertaling mislukt")
+              }
+            } catch (translateErr) {
+              if ((translateErr as Error).name === 'AbortError') {
+                console.error("⏰ Translation timeout")
+                setTranslatedText("Vertaling timeout")
+              } else {
+                console.error("❌ Translation error:", translateErr)
+                setTranslatedText("Vertaling mislukt")
+              }
             }
           }
         } else {

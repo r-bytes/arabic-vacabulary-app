@@ -1,16 +1,25 @@
-import { createWorker, type Worker as TesseractWorker } from "tesseract.js"
+// Dynamic import for Tesseract.js to avoid build issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let createWorker: any = null
 
 type OcrResult = {
   text: string
   confidence: number
 }
 
-const workerByLang: Record<string, TesseractWorker | undefined> = {}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const workerByLang: Record<string, any> = {}
 
-async function getWorker(lang: string): Promise<TesseractWorker> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getWorker(lang: string): Promise<any> {
+  if (!createWorker) {
+    const tesseract = await import("tesseract.js")
+    createWorker = tesseract.createWorker
+  }
+  
   if (!workerByLang[lang]) {
     const worker = await createWorker(lang, 1, { logger: () => {} })
-    workerByLang[lang] = worker as TesseractWorker
+    workerByLang[lang] = worker
   }
   return workerByLang[lang]!
 }
