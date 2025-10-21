@@ -195,8 +195,6 @@ export function CameraTranslate() {
         setIsProcessing(false)
         // Clear last processed text so it can be processed again if detected
         lastProcessedText.current = ""
-        // Stop processing completely when no text is detected
-        processingRef.current = false
         // Don't clear existing text immediately, give user time to see it
       }
     } catch (err) {
@@ -218,8 +216,8 @@ export function CameraTranslate() {
     const doProcess = async () => {
       await captureAndProcess()
       
-      // Schedule next process only if we're still processing
-      if (isOpenRef.current && processingRef.current) {
+      // Schedule next process
+      if (isOpenRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
         }, 1000) // Every 1 second for much faster response
