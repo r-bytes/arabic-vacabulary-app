@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Camera, Languages, Loader2, X } from "lucide-react"
+import { Camera, Languages, Loader2, Square, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 export function CameraTranslate() {
@@ -145,8 +145,11 @@ export function CameraTranslate() {
             console.log("💾 Using cached translation")
             setTranslatedText(cachedTranslation)
           } else {
-            // Translate
+            // Translate with timeout
             console.log("🌐 Translating text...")
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+            
             const translateRes = await fetch("/api/translate", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -155,7 +158,10 @@ export function CameraTranslate() {
                 source: "ar",
                 target: "nl",
               }),
+              signal: controller.signal,
             })
+            
+            clearTimeout(timeoutId)
 
             if (translateRes.ok) {
               const translateData = await translateRes.json()
@@ -168,12 +174,22 @@ export function CameraTranslate() {
               console.error("❌ Translation failed:", translateRes.status)
               setTranslatedText("Vertaling mislukt")
             }
+          } catch (translateErr) {
+            if (translateErr.name === 'AbortError') {
+              console.error("⏰ Translation timeout")
+              setTranslatedText("Vertaling timeout")
+            } else {
+              console.error("❌ Translation error:", translateErr)
+              setTranslatedText("Vertaling mislukt")
+            }
           }
         } else {
           console.log("🔄 Same text detected, skipping translation")
         }
       } else {
         console.log("⚠️ No text detected or text too short")
+        // Clear processing state when no text is detected
+        setIsProcessing(false)
         // Don't clear existing text immediately, give user time to see it
       }
     } catch (err) {
@@ -181,7 +197,10 @@ export function CameraTranslate() {
       setError("Verwerking mislukt. Probeer opnieuw.")
     } finally {
       processingRef.current = false
-      setIsProcessing(false)
+      // Only clear processing state if we're not in the middle of processing
+      if (!processingRef.current) {
+        setIsProcessing(false)
+      }
     }
   }, [])
 
@@ -199,7 +218,7 @@ export function CameraTranslate() {
       if (isOpenRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
-        }, 3000) // Every 3 seconds to avoid too frequent processing
+        }, 2000) // Every 2 seconds for faster initial response
       }
     }
 
@@ -262,14 +281,30 @@ export function CameraTranslate() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleToggle}
-                className="text-white hover:bg-white/20"
-              >
-                <X className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {isProcessing && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      processingRef.current = false
+                      setIsProcessing(false)
+                    }}
+                    className="text-white hover:bg-white/20"
+                    title="Stop verwerken"
+                  >
+                    <Square className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleToggle}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </div>
 
