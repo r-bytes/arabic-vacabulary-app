@@ -12,6 +12,8 @@ export function CameraTranslate() {
   const [error, setError] = useState<string>("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [isFrozen, setIsFrozen] = useState(false)
+  const [frozenImage, setFrozenImage] = useState<string | null>(null)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -255,6 +257,36 @@ export function CameraTranslate() {
     }
   }
 
+  const handleCapture = async () => {
+    if (!videoRef.current || !canvasRef.current) return
+
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext("2d")
+    
+    if (!ctx) return
+
+    // Capture current frame
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    ctx.drawImage(video, 0, 0)
+    
+    // Convert to data URL for display
+    const imageData = canvas.toDataURL("image/jpeg", 0.9)
+    setFrozenImage(imageData)
+    setIsFrozen(true)
+    processingRef.current = false
+    setIsProcessing(false)
+  }
+
+  const handleUnfreeze = () => {
+    setIsFrozen(false)
+    setFrozenImage(null)
+    processingRef.current = true
+    setIsProcessing(true)
+    processFrame()
+  }
+
   return (
     <>
       <Button
@@ -270,14 +302,22 @@ export function CameraTranslate() {
 
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-          {/* Video */}
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            playsInline
-            muted
-            autoPlay
-          />
+          {/* Video or Frozen Image */}
+          {isFrozen && frozenImage ? (
+            <img
+              src={frozenImage}
+              alt="Frozen frame"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              playsInline
+              muted
+              autoPlay
+            />
+          )}
 
           {/* Hidden canvas for processing */}
           <canvas ref={canvasRef} className="hidden" />
@@ -287,34 +327,21 @@ export function CameraTranslate() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-white">
                 <Languages className="h-5 w-5" />
-                <span className="text-sm font-medium">Camera Vertaling</span>
-                {isProcessing && (
+                <span className="text-sm font-medium">
+                  {isFrozen ? "Foto - Vertaling bevroren" : "Camera Vertaling"}
+                </span>
+                {isProcessing && !isFrozen && (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleStartStop}
-                  className="text-white hover:bg-white/20"
-                  title={isProcessing ? "Stop verwerken" : "Start verwerken"}
-                >
-                  {isProcessing ? (
-                    <Square className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleToggle}
-                  className="text-white hover:bg-white/20"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleToggle}
+                className="text-white hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
           </div>
 
@@ -386,7 +413,7 @@ export function CameraTranslate() {
                     </p>
                   </div>
                 )}
-                {isProcessing && (
+                {isProcessing && !isFrozen && (
                   <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -398,9 +425,50 @@ export function CameraTranslate() {
             </div>
           )}
 
+          {/* Bottom Controls */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+            <div className="flex items-center justify-center gap-4">
+              {!isFrozen ? (
+                <>
+                  {/* Photo Button */}
+                  <Button
+                    onClick={handleCapture}
+                    size="lg"
+                    className="rounded-full h-16 w-16 bg-white hover:bg-gray-100 shadow-2xl"
+                  >
+                    <div className="h-12 w-12 rounded-full border-4 border-gray-800" />
+                  </Button>
+                  
+                  {/* Stop Button */}
+                  <Button
+                    onClick={handleStartStop}
+                    variant="outline"
+                    size="lg"
+                    className="rounded-full h-12 w-12 bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  >
+                    {isProcessing ? (
+                      <Square className="h-5 w-5" />
+                    ) : (
+                      <Play className="h-5 w-5" />
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleUnfreeze}
+                  size="lg"
+                  variant="default"
+                  className="rounded-full px-6"
+                >
+                  Hervat Live Vertaling
+                </Button>
+              )}
+            </div>
+          </div>
+
           {/* Instructions */}
           {!translatedText && !detectedText && !isLoading && !error && (
-            <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="absolute bottom-20 left-0 right-0 p-6">
               <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-2xl max-w-sm mx-auto">
                 <div className="text-center">
                   <div className="text-4xl mb-3">📱</div>
