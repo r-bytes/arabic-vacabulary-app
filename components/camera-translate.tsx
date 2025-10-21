@@ -66,11 +66,10 @@ export function CameraTranslate() {
   }, [])
 
   const captureAndProcess = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || processingRef.current) {
+    if (!videoRef.current || !canvasRef.current || !processingRef.current) {
       return
     }
 
-    processingRef.current = true
     setIsProcessing(true)
 
     try {
@@ -187,7 +186,6 @@ export function CameraTranslate() {
     } catch (err) {
       setError("Verwerking mislukt. Probeer opnieuw.")
     } finally {
-      processingRef.current = false
       setIsProcessing(false)
     }
   }, [])
@@ -197,13 +195,13 @@ export function CameraTranslate() {
   }, [isOpen])
 
   const processFrame = useCallback(() => {
-    if (!isOpenRef.current || !processingRef.current) return
+    if (!isOpenRef.current) return
 
     const doProcess = async () => {
       await captureAndProcess()
       
-      // Schedule next process ONLY if still actively processing
-      if (isOpenRef.current && processingRef.current) {
+      // Schedule next process
+      if (isOpenRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
         }, 1000) // Every 1 second for faster response
@@ -246,6 +244,9 @@ export function CameraTranslate() {
       // Stop processing
       processingRef.current = false
       setIsProcessing(false)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
     } else {
       // Start processing
       processingRef.current = true
