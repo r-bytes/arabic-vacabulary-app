@@ -37,7 +37,6 @@ export async function POST(req: Request): Promise<Response> {
       },
     })
   } catch (err) {
-    console.error("TTS error", err)
     return NextResponse.json({ error: "TTS failed" }, { status: 500 })
   }
 }

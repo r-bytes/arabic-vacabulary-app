@@ -59,7 +59,6 @@ export function AudioRecorder({ audioUrl, onAudioChange }: AudioRecorderProps) {
         setRecordingTime((prev) => prev + 1)
       }, 1000)
     } catch (error) {
-      console.error("Error accessing microphone:", error)
       alert("Kon geen toegang krijgen tot de microfoon. Controleer je browser instellingen.")
     }
   }

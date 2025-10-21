@@ -159,7 +159,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     nl: "",
     en: "",
     tags: "",
-    folderId: defaultFolderId || "",
+    folderId: defaultFolderId || folders[0]?.id || "",
     audioUrl: "",
     ttsHint: "ar-SA",
   })
@@ -244,50 +244,54 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
         <DialogHeader>
           <DialogTitle>{card ? "Kaart bewerken" : "Nieuwe kaart"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="ar">Arabisch *</Label>
-              <Textarea
-                id="ar"
-                dir="rtl"
-                value={formData.ar}
-                onChange={(e) => setFormData({ ...formData, ar: e.target.value })}
-                placeholder="كِتاب"
-                required
-                className="min-h-[80px] text-2xl"
-              />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Main Content Section */}
+          <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">Inhoud</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="ar" className="font-semibold text-foreground">Arabisch *</Label>
+                <Textarea
+                  id="ar"
+                  dir="rtl"
+                  value={formData.ar}
+                  onChange={(e) => setFormData({ ...formData, ar: e.target.value })}
+                  placeholder="كِتاب"
+                  required
+                  className="min-h-[80px] text-2xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="translit" className="font-semibold text-foreground">Transliteratie</Label>
+                <Input
+                  id="translit"
+                  value={formData.translit}
+                  readOnly
+                  placeholder="kitāb"
+                  className="bg-muted/50 border-muted-foreground/20"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="translit">Transliteratie</Label>
-              <Input
-                id="translit"
-                value={formData.translit}
-                readOnly
-                placeholder="kitāb"
-                className="bg-muted"
-              />
-            </div>
-          </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="nl">Nederlands</Label>
-              <Input
-                id="nl"
-                value={formData.nl}
-                onChange={(e) => setFormData({ ...formData, nl: e.target.value })}
-                placeholder="boek"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="en">Engels</Label>
-              <Input
-                id="en"
-                value={formData.en}
-                onChange={(e) => setFormData({ ...formData, en: e.target.value })}
-                placeholder="book"
-              />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="nl" className="font-semibold text-foreground">Nederlands</Label>
+                <Input
+                  id="nl"
+                  value={formData.nl}
+                  onChange={(e) => setFormData({ ...formData, nl: e.target.value })}
+                  placeholder="boek"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="en" className="font-semibold text-foreground">Engels</Label>
+                <Input
+                  id="en"
+                  value={formData.en}
+                  onChange={(e) => setFormData({ ...formData, en: e.target.value })}
+                  placeholder="book"
+                />
+              </div>
             </div>
           </div>
 
@@ -305,34 +309,38 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             />
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="folder">Map *</Label>
-              <Select
-                value={formData.folderId}
-                onValueChange={(value) => setFormData({ ...formData, folderId: value })}
-              >
-                <SelectTrigger id="folder">
-                  <SelectValue placeholder="Selecteer map..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {folders.map((folder) => (
-                    <SelectItem key={folder.id} value={folder.id}>
-                      {folder.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (komma gescheiden)</Label>
-              <Input
-                id="tags"
-                value={formData.tags}
-                readOnly
-                placeholder="noun, place"
-                className="bg-muted"
-              />
+          {/* Metadata Section */}
+          <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">Metadata</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="folder" className="font-semibold text-foreground">Map *</Label>
+                <Select
+                  value={formData.folderId}
+                  onValueChange={(value) => setFormData({ ...formData, folderId: value })}
+                >
+                  <SelectTrigger id="folder">
+                    <SelectValue placeholder="Selecteer map..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {folders.map((folder) => (
+                      <SelectItem key={folder.id} value={folder.id}>
+                        {folder.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tags" className="font-semibold text-foreground">Tags (komma gescheiden)</Label>
+                <Input
+                  id="tags"
+                  value={formData.tags}
+                  readOnly
+                  placeholder="noun, place"
+                  className="bg-muted/50 border-muted-foreground/20"
+                />
+              </div>
             </div>
           </div>
 
@@ -341,8 +349,9 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             onAudioChange={(url) => setFormData({ ...formData, audioUrl: url || "" })}
           />
 
-          <div className="space-y-2">
-            <Label>Tekst uit foto (OCR)</Label>
+          {/* OCR Section */}
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Tekst uit foto (OCR)</h3>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
               <Input
                 type="file"
@@ -446,50 +455,53 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                 {ocrBusy ? "Bezig..." : "Opnieuw scannen"}
               </Button>
             </div>
-            <div className="flex items-center gap-2">
-              <Label className="text-xs">Taal</Label>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Select value={ocrLang} onValueChange={(v) => setOcrLang(v as any)}>
-                <SelectTrigger className="h-8 w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto">Auto (ara/nld/eng)</SelectItem>
-                  <SelectItem value="ara">Arabisch (ara)</SelectItem>
-                  <SelectItem value="nld">Nederlands (nld)</SelectItem>
-                  <SelectItem value="eng">Engels (eng)</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="flex items-center gap-2 ml-2">
-                <Label className="text-xs" htmlFor="cloud-ocr">Cloud OCR</Label>
-                <input id="cloud-ocr" type="checkbox" checked={useCloudOCR} onChange={(e) => setUseCloudOCR(e.target.checked)} />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-medium text-foreground">Taal</Label>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <Select value={ocrLang} onValueChange={(v) => setOcrLang(v as any)}>
+                  <SelectTrigger className="h-8 w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Auto (ara/nld/eng)</SelectItem>
+                    <SelectItem value="ara">Arabisch (ara)</SelectItem>
+                    <SelectItem value="nld">Nederlands (nld)</SelectItem>
+                    <SelectItem value="eng">Engels (eng)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex items-center gap-2 ml-2">
-                <Label className="text-xs" htmlFor="auto-tr">Auto vertalen</Label>
-                <input id="auto-tr" type="checkbox" checked={autoTranslate} onChange={(e) => setAutoTranslate(e.target.checked)} />
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-medium text-foreground" htmlFor="cloud-ocr">Cloud OCR</Label>
+                <input id="cloud-ocr" type="checkbox" className="h-4 w-4" checked={useCloudOCR} onChange={(e) => setUseCloudOCR(e.target.checked)} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-medium text-foreground" htmlFor="auto-tr">Auto vertalen</Label>
+                <input id="auto-tr" type="checkbox" className="h-4 w-4" checked={autoTranslate} onChange={(e) => setAutoTranslate(e.target.checked)} />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">Tip: goede belichting, hoge scherpte en vlakke tekst verbeteren herkenning.</p>
+            <p className="text-xs text-muted-foreground italic">Tip: goede belichting, hoge scherpte en vlakke tekst verbeteren herkenning.</p>
           </div>
 
-          <div className="rounded-lg border bg-muted/30 p-4">
-            <h3 className="mb-3 text-sm font-medium">Preview</h3>
-            <div className="space-y-2">
-              <div className="rounded-lg bg-card p-4 text-center">
-                <div dir="rtl" className="text-3xl font-semibold">
+          {/* Preview Section */}
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Preview</h3>
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border bg-background p-4 text-center shadow-sm">
+                <div dir="rtl" className="text-3xl font-semibold text-foreground">
                   {formData.ar || "..."}
                 </div>
-                {formData.translit && <div className="mt-2 text-sm text-muted-foreground">{formData.translit}</div>}
+                {formData.translit && <div className="mt-2 text-sm font-medium text-muted-foreground">{formData.translit}</div>}
               </div>
               <div className="flex gap-2 text-sm">
                 {formData.nl && (
-                  <div className="flex-1 rounded-lg bg-card p-3">
-                    <span className="font-medium">NL:</span> {formData.nl}
+                  <div className="flex-1 rounded-lg border border-border bg-background p-3 shadow-sm">
+                    <span className="font-semibold text-foreground">NL:</span> <span className="text-foreground">{formData.nl}</span>
                   </div>
                 )}
                 {formData.en && (
-                  <div className="flex-1 rounded-lg bg-card p-3">
-                    <span className="font-medium">EN:</span> {formData.en}
+                  <div className="flex-1 rounded-lg border border-border bg-background p-3 shadow-sm">
+                    <span className="font-semibold text-foreground">EN:</span> <span className="text-foreground">{formData.en}</span>
                   </div>
                 )}
               </div>
@@ -555,8 +567,6 @@ function AutoTranslateFields({
       setBusy(true)
       
       try {
-        console.log("Auto-translating:", { sourceText, sourceLang, currentValues: value })
-        
         // Fill missing fields only
         const promises = []
         
@@ -569,7 +579,6 @@ function AutoTranslateFields({
             })
               .then((r) => r.json())
               .then((j) => {
-                console.log("NL translation result:", j)
                 if (j?.translatedText) {
                   onResult({ nl: j.translatedText })
                 }
@@ -587,7 +596,6 @@ function AutoTranslateFields({
             })
               .then((r) => r.json())
               .then((j) => {
-                console.log("EN translation result:", j)
                 if (j?.translatedText) {
                   onResult({ en: j.translatedText })
                 }
@@ -605,7 +613,6 @@ function AutoTranslateFields({
             })
               .then((r) => r.json())
               .then((j) => {
-                console.log("AR translation result:", j)
                 if (j?.translatedText) {
                   // Clean the translation - remove any English text that might be mixed in
                   const cleanArabic = j.translatedText.replace(/[a-zA-Z\s\/]+/g, '').trim()

@@ -26,7 +26,6 @@ async function tryTranslate(text: string, source: string, target: string, apiKey
         }
       }
     } catch (e) {
-      console.log(`Service ${service.name} failed:`, e)
     }
   }
 
@@ -40,7 +39,6 @@ async function tryTranslate(text: string, source: string, target: string, apiKey
       }
     }
   } catch (e) {
-    console.log("MyMemory failed:", e)
   }
 
   throw new Error("All translation services failed")
@@ -51,14 +49,12 @@ export async function POST(req: Request): Promise<Response> {
     const { text, source, target } = await req.json()
     if (!text || !target) return NextResponse.json({ error: "Missing text/target" }, { status: 400 })
 
-    console.log("Translate request:", { text: text.substring(0, 50), source, target })
 
     const translatedText = await tryTranslate(text, source || "auto", target, process.env.TRANSLATE_API_KEY)
     
     return NextResponse.json({ translatedText })
   } catch (e: unknown) {
     const error = e as Error
-    console.error("Translate error:", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

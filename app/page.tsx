@@ -71,12 +71,12 @@ export default function DashboardPage() {
               <CameraTranslate />
               <ThemeToggle />
               <Button variant="outline" size="sm" onClick={() => setImportExportOpen(true)} className="flex">
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="md:mr-2 h-4 w-4" />
                 <span className="hidden md:inline">Import/Export</span>
               </Button>
               <Button variant="outline" size="sm" asChild className="flex">
                 <Link href="/study">
-                  <BookOpen className="mr-2 h-4 w-4" />
+                  <BookOpen className="md:mr-2 h-4 w-4" />
                   <span className="hidden md:inline">Studeren</span>
                 </Link>
               </Button>
@@ -114,7 +114,12 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <CardsGrid cards={filteredCards} onEditCard={handleEditCard} />
+          <CardsGrid 
+            cards={filteredCards} 
+            onEditCard={handleEditCard}
+            selectedFolderId={selectedFolderId}
+            onFolderFilter={setSelectedFolderId}
+          />
         </main>
       </div>
 

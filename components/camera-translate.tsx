@@ -53,7 +53,6 @@ export function CameraTranslate() {
       // Start processing after camera is ready
       onReady()
     } catch (err) {
-      console.error("Camera error:", err)
       setError("Kan camera niet openen. Controleer de permissies.")
       setIsLoading(false)
     }
@@ -128,7 +127,6 @@ export function CameraTranslate() {
         }
       }
     } catch (err) {
-      console.error("Processing error:", err)
     } finally {
       processingRef.current = false
       setIsProcessing(false)

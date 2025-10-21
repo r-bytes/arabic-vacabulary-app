@@ -46,7 +46,6 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ text })
   } catch (e: unknown) {
     const error = e as Error
-    console.error("OCR error", error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

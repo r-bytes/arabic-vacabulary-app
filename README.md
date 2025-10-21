@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Arabic Vocabulary App 📚
 
-## Getting Started
+Een moderne web-app om Arabisch vocabulaire te leren met flashcards, quizzen en games.
 
-First, run the development server:
+## ✨ Features
+
+- 📱 **Flashcards** - Leer met spaced repetition systeem (SRS)
+- 🎯 **Quizzen** - Multiple choice en typ-oefeningen
+- 🎮 **Memory Game** - Maak matching pairs
+- 📸 **Camera Translate** - Scan Arabische tekst met je mobiel (zoals Google Translate)
+- 📁 **Folders** - Organiseer je woordenschat in mappen
+- 🎨 **Dark Mode** - Comfortabel leren in het donker
+- 💾 **Auto-save** - Data wordt automatisch opgeslagen
+- 🔄 **Offline-first** - Werkt zonder internet verbinding
+
+## 🚀 Quick Start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# Installeer dependencies
+pnpm install
+
+# Start development server
 pnpm dev
-# or
-bun dev
+
+# Open browser
+http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📊 Database Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+⚠️ **Belangrijk:** Als je database timeouts krijgt, zie [DATABASE_SETUP.md](./DATABASE_SETUP.md)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+De app werkt out-of-the-box met localStorage als fallback. Voor productie raden we een MySQL database aan (bijvoorbeeld PlanetScale).
 
-## Learn More
+### Snelle setup (optioneel):
 
-To learn more about Next.js, take a look at the following resources:
+1. Kopieer `.env.example` naar `.env`
+2. Vul database credentials in
+3. Herstart dev server
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Zonder database werkt alles nog steeds, maar data blijft alleen lokaal in je browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠️ Tech Stack
 
-## Deploy on Vercel
+- **Framework:** Next.js 15 (App Router)
+- **Styling:** Tailwind CSS + shadcn/ui
+- **State:** Zustand
+- **Database:** MySQL (optioneel)
+- **Storage:** localStorage (fallback)
+- **OCR:** Tesseract.js
+- **Translation:** LibreTranslate (gratis)
+- **Animations:** Framer Motion
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📱 Mobile Features
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Camera translate (alleen zichtbaar op mobiel)
+- Touch-friendly interface
+- Responsive design
+- Offline support
+
+## 🎯 Commands
+
+```bash
+pnpm dev          # Start development
+pnpm build        # Build for production
+pnpm start        # Start production server
+pnpm lint         # Run linter
+```
+
+## 🔧 Environment Variables
+
+Optioneel - alleen nodig als je een database wilt gebruiken:
+
+```env
+DB_HOST=your-host
+DB_PORT=3306
+DB_USER=your-user
+DB_PASSWORD=your-password
+DB_NAME=arabic_vocab
+```
+
+## 📖 Usage
+
+1. **Kaarten toevoegen:** Klik op "Nieuwe kaart" en vul Arabisch + vertaling in
+2. **Studeren:** Ga naar de Study pagina voor flashcards of quizzen
+3. **Camera scan:** (Mobiel) Gebruik camera icoon om tekst te scannen
+4. **Organiseren:** Maak mappen om je woordenschat te categoriseren
+
+## 🤝 Contributing
+
+1. Fork het project
+2. Maak een feature branch
+3. Commit je wijzigingen
+4. Push naar de branch
+5. Open een Pull Request
+
+## 📄 License
+
+MIT License - zie LICENSE file voor details
+
+## 🐛 Troubleshooting
+
+- **Database errors:** Zie [DATABASE_SETUP.md](./DATABASE_SETUP.md)
+- **Build fails:** Run `pnpm install` opnieuw
+- **Data verloren:** Check of localStorage werkt in je browser
+- **Camera werkt niet:** Geef browser camera permissies
+
+## 🚀 Deploy
+
+Deploy eenvoudig naar Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/r-bytes/arabic-vacabulary-app)
+
+Vergeet niet om environment variables toe te voegen in Vercel settings!

@@ -7,12 +7,20 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "arabic_vocab",
   connectionLimit: 10,
+  connectTimeout: 5000, // 5 seconds timeout
+  waitForConnections: true,
+  queueLimit: 0,
 })
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function query<T = any>(sql: string, params: any[] = []): Promise<[T[], any]> {
-  const [rows, fields] = await pool.query(sql, params)
-  return [rows as T[], fields]
+  try {
+    const [rows, fields] = await pool.query(sql, params)
+    return [rows as T[], fields]
+  } catch (error) {
+    console.error("Database query error:", error)
+    throw error
+  }
 }
 
 

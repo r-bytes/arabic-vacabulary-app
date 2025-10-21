@@ -5,21 +5,32 @@ export async function GET(): Promise<Response> {
   const [rows] = await query(
     "SELECT id, name, created_at as createdAt FROM folders ORDER BY created_at ASC"
   )
-  return NextResponse.json(rows)
+  // Convert id to string to match cards API
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const folders = rows.map((row: any) => ({
+    ...row,
+    id: String(row.id)
+  }))
+  return NextResponse.json(folders)
 }
 
 export async function POST(req: Request): Promise<Response> {
-  const { name } = await req.json()
-  if (!name || typeof name !== "string") {
-    return NextResponse.json({ error: "Invalid name" }, { status: 400 })
+  try {
+    const { name } = await req.json()
+    if (!name || typeof name !== "string") {
+      return NextResponse.json({ error: "Invalid name" }, { status: 400 })
+    }
+    const createdAt = new Date()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [result]: any = await query(
+      "INSERT INTO folders (name, created_at) VALUES (?, ?)",
+      [name, createdAt]
+    )
+    const id = String(result.insertId)
+    return NextResponse.json({ id, name, createdAt: createdAt.toISOString() })
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 })
   }
-  const createdAt = new Date()
-  const [result] = await query(
-    "INSERT INTO folders (name, created_at) VALUES (?, ?)",
-    [name, createdAt]
-  )
-  const id = String(result[0]?.insertId)
-  return NextResponse.json({ id, name, createdAt: createdAt.toISOString() })
 }
 
 export async function PUT(req: Request): Promise<Response> {

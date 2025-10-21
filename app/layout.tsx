@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/sonner"
 import { SeedInitializer } from "@/lib/seed-initializer"
 import { Analytics } from "@vercel/analytics/next"
 import type { Metadata } from "next"
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         <SeedInitializer />
         {children}
+        <Toaster />
         <Analytics />
       </body>
     </html>
