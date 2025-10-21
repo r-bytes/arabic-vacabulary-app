@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Camera, Languages, Loader2, Square, X } from "lucide-react"
+import { Camera, Copy, Languages, Loader2, Square, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 export function CameraTranslate() {
@@ -11,6 +11,7 @@ export function CameraTranslate() {
   const [detectedText, setDetectedText] = useState<string>("")
   const [error, setError] = useState<string>("")
   const [isProcessing, setIsProcessing] = useState(false)
+  const [copySuccess, setCopySuccess] = useState(false)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -244,6 +245,16 @@ export function CameraTranslate() {
     setIsOpen(!isOpen)
   }
 
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000) // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy text:', err)
+    }
+  }
+
   return (
     <>
       <Button
@@ -336,7 +347,18 @@ export function CameraTranslate() {
               <div className="max-w-md mx-auto space-y-4">
                 {detectedText && (
                   <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-2xl border border-white/20">
-                    <p className="text-gray-600 text-xs mb-2 font-medium">Gedetecteerd</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-gray-600 text-xs font-medium">Gedetecteerd</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopy(detectedText)}
+                        className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        title="Kopieer gedetecteerde tekst"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                     <p className="text-gray-900 text-2xl font-arabic leading-relaxed" dir="rtl">
                       {detectedText}
                     </p>
@@ -344,7 +366,22 @@ export function CameraTranslate() {
                 )}
                 {translatedText && (
                   <div className="bg-primary rounded-2xl p-4 shadow-2xl">
-                    <p className="text-primary-foreground/90 text-xs mb-2 font-medium">Vertaling</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-primary-foreground/90 text-xs font-medium">Vertaling</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopy(translatedText)}
+                        className="h-6 w-6 p-0 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                        title="Kopieer vertaling"
+                      >
+                        {copySuccess ? (
+                          <div className="h-3 w-3 rounded-full bg-green-400" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
                     <p className="text-primary-foreground text-2xl font-semibold leading-relaxed">
                       {translatedText}
                     </p>
