@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Camera, Copy, Languages, Loader2, Square, X } from "lucide-react"
+import { Camera, Copy, Languages, Loader2, Play, Square, X } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 export function CameraTranslate() {
@@ -56,8 +56,8 @@ export function CameraTranslate() {
       }
       
       setIsLoading(false)
-      // Start processing after camera is ready
-      onReady()
+      // DON'T start processing automatically - user must click start button
+      // onReady()
     } catch {
       setError("Kan camera niet openen. Controleer de permissies.")
       setIsLoading(false)
@@ -211,16 +211,16 @@ export function CameraTranslate() {
   }, [isOpen])
 
   const processFrame = useCallback(() => {
-    if (!isOpenRef.current) return
+    if (!isOpenRef.current || !processingRef.current) return
 
     const doProcess = async () => {
       await captureAndProcess()
       
-      // Schedule next process
-      if (isOpenRef.current) {
+      // Schedule next process ONLY if still actively processing
+      if (isOpenRef.current && processingRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
-        }, 1000) // Every 1 second for much faster response
+        }, 1500) // Every 1.5 seconds - less aggressive
       }
     }
 
@@ -253,6 +253,19 @@ export function CameraTranslate() {
       setTimeout(() => setCopySuccess(false), 2000) // Reset after 2 seconds
     } catch (err) {
       console.error('Failed to copy text:', err)
+    }
+  }
+
+  const handleStartStop = () => {
+    if (processingRef.current) {
+      // Stop processing
+      processingRef.current = false
+      setIsProcessing(false)
+    } else {
+      // Start processing
+      processingRef.current = true
+      setIsProcessing(true)
+      processFrame()
     }
   }
 
@@ -297,15 +310,15 @@ export function CameraTranslate() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => {
-                    processingRef.current = false
-                    setIsProcessing(false)
-                    // DON'T clear the text - keep the translation visible
-                  }}
+                  onClick={handleStartStop}
                   className="text-white hover:bg-white/20"
-                  title="Stop verwerken"
+                  title={isProcessing ? "Stop verwerken" : "Start verwerken"}
                 >
-                  <Square className="h-4 w-4" />
+                  {isProcessing ? (
+                    <Square className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
                 </Button>
                 <Button
                   variant="ghost"
