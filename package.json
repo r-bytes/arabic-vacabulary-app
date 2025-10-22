@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "dev:stable": "next dev",
     "build": "next build",
     "start": "next start",
@@ -47,7 +47,6 @@
     "date-fns": "4.1.0",
     "edge-tts": "^1.0.1",
     "embla-carousel-react": "8.5.1",
-    "google-tts-api": "^2.0.2",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "mysql2": "^3.15.2",
