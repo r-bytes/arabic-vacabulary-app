@@ -9,11 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { recognizeTextFromFile } from "@/lib/ocr"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { Camera, Clipboard, RotateCcw } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Camera, Clipboard, Play, RotateCcw, Square } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 // Enhanced Arabic to Latin transliteration with diacritics
 function transliterateArabic(arabic: string): string {
@@ -168,6 +167,15 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
   const [lastOcrFile, setLastOcrFile] = useState<File | null>(null)
   const [useCloudOCR, setUseCloudOCR] = useState(true)
   const [autoTranslate, setAutoTranslate] = useState(true)
+  const [showLiveCamera, setShowLiveCamera] = useState(false)
+  const [detectedText, setDetectedText] = useState("")
+  const [translatedText, setTranslatedText] = useState("")
+  const [isProcessing, setIsProcessing] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const processingRef = useRef(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Paste functionality
   const handlePaste = async (field: 'ar' | 'nl' | 'en') => {
@@ -179,6 +187,134 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     } catch (err) {
       console.error('Failed to read clipboard:', err)
     }
+  }
+
+  // Live camera functions
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play()
+      }
+      setShowLiveCamera(true)
+      processingRef.current = true
+      processFrame()
+    } catch (err) {
+      console.error('Camera access failed:', err)
+    }
+  }
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+    processingRef.current = false
+    setShowLiveCamera(false)
+    setIsProcessing(false)
+    setDetectedText("")
+    setTranslatedText("")
+  }
+
+  const processFrame = async () => {
+    if (!processingRef.current || !videoRef.current || !canvasRef.current) return
+
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    
+    if (!ctx) return
+
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    ctx.drawImage(video, 0, 0)
+
+    try {
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.8)
+      })
+
+      const formData = new FormData()
+      formData.append('file', blob, 'frame.jpg')
+      formData.append('lang', 'auto')
+
+      const response = await fetch('/api/ocr', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const text = data?.text?.trim() || ''
+        
+        if (text && text !== detectedText) {
+          setDetectedText(text)
+          
+          // Auto-translate detected text
+          try {
+            const translateResponse = await fetch('/api/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                text: text,
+                source: 'auto',
+                target: ocrLang === 'ara' ? 'nl' : 'ar'
+              })
+            })
+            
+            if (translateResponse.ok) {
+              const translateData = await translateResponse.json()
+              setTranslatedText(translateData?.translatedText || '')
+            }
+          } catch (err) {
+            console.error('Translation failed:', err)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('OCR processing failed:', err)
+    }
+
+    // Schedule next frame
+    if (processingRef.current) {
+      timeoutRef.current = setTimeout(processFrame, 2000) // Process every 2 seconds
+    }
+  }
+
+  const handleUseDetectedText = () => {
+    if (detectedText) {
+      const looksArabic = /[\u0600-\u06FF]/.test(detectedText)
+      if (looksArabic) {
+        setFormData(prev => ({ ...prev, ar: detectedText }))
+      } else if (ocrLang === 'nld') {
+        setFormData(prev => ({ ...prev, nl: detectedText }))
+      } else if (ocrLang === 'eng') {
+        setFormData(prev => ({ ...prev, en: detectedText }))
+      } else {
+        setFormData(prev => ({ ...prev, nl: detectedText }))
+      }
+    }
+    if (translatedText) {
+      const looksArabic = /[\u0600-\u06FF]/.test(translatedText)
+      if (looksArabic) {
+        setFormData(prev => ({ ...prev, ar: translatedText }))
+      } else {
+        setFormData(prev => ({ ...prev, nl: translatedText }))
+      }
+    }
+    stopCamera()
   }
 
   useEffect(() => {
@@ -206,6 +342,13 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
       })
     }
   }, [card, defaultFolderId, folders, open])
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera()
+    }
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -252,24 +395,24 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0 w-[calc(100vw-2rem)] sm:w-auto">
-        <DialogHeader>
-          <DialogTitle>{card ? "Kaart bewerken" : "Nieuwe kaart"}</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-0 w-[calc(100vw-2rem)] sm:w-auto bg-background border-2 border-border shadow-2xl">
+        <DialogHeader className="border-b border-border pb-4">
+          <DialogTitle className="text-2xl font-bold text-foreground">{card ? "Kaart bewerken" : "Nieuwe kaart"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Main Content Section */}
-          <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Inhoud</h3>
+          <div className="rounded-lg border-2 border-border bg-card p-6 space-y-6 shadow-lg">
+            <h3 className="text-lg font-bold text-foreground border-b border-border pb-2">Inhoud</h3>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="ar" className="font-semibold text-foreground">Arabisch *</Label>
+                  <Label htmlFor="ar" className="text-base font-bold text-foreground">Arabisch *</Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => handlePaste('ar')}
-                    className="h-8 px-2"
+                    className="h-8 px-3 font-semibold border-2"
                   >
                     <Clipboard className="h-3 w-3 mr-1" />
                     Plak
@@ -282,17 +425,17 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                   onChange={(e) => setFormData({ ...formData, ar: e.target.value })}
                   placeholder="كِتاب"
                   required
-                  className="min-h-[80px] text-2xl"
+                  className="min-h-[80px] text-2xl border-2 border-border focus:border-primary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="translit" className="font-semibold text-foreground">Transliteratie</Label>
+                <Label htmlFor="translit" className="text-base font-bold text-foreground">Transliteratie</Label>
                 <Input
                   id="translit"
                   value={formData.translit}
                   readOnly
                   placeholder="kitāb"
-                  className="bg-muted/50 border-muted-foreground/20"
+                  className="bg-muted/80 border-2 border-muted-foreground/40 text-foreground font-medium"
                 />
               </div>
             </div>
@@ -300,13 +443,13 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="nl" className="font-semibold text-foreground">Nederlands</Label>
+                  <Label htmlFor="nl" className="text-base font-bold text-foreground">Nederlands</Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => handlePaste('nl')}
-                    className="h-8 px-2"
+                    className="h-8 px-3 font-semibold border-2"
                   >
                     <Clipboard className="h-3 w-3 mr-1" />
                     Plak
@@ -317,17 +460,18 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                   value={formData.nl}
                   onChange={(e) => setFormData({ ...formData, nl: e.target.value })}
                   placeholder="boek"
+                  className="border-2 border-border focus:border-primary"
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="en" className="font-semibold text-foreground">Engels</Label>
+                  <Label htmlFor="en" className="text-base font-bold text-foreground">Engels</Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => handlePaste('en')}
-                    className="h-8 px-2"
+                    className="h-8 px-3 font-semibold border-2"
                   >
                     <Clipboard className="h-3 w-3 mr-1" />
                     Plak
@@ -338,6 +482,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                   value={formData.en}
                   onChange={(e) => setFormData({ ...formData, en: e.target.value })}
                   placeholder="book"
+                  className="border-2 border-border focus:border-primary"
                 />
               </div>
             </div>
@@ -358,16 +503,16 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
           )}
 
           {/* Metadata Section */}
-          <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Metadata</h3>
+          <div className="rounded-lg border-2 border-border bg-card p-6 space-y-6 shadow-lg">
+            <h3 className="text-lg font-bold text-foreground border-b border-border pb-2">Metadata</h3>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="folder" className="font-semibold text-foreground">Map *</Label>
+                <Label htmlFor="folder" className="text-base font-bold text-foreground">Map *</Label>
                 <Select
                   value={formData.folderId}
                   onValueChange={(value) => setFormData({ ...formData, folderId: value })}
                 >
-                  <SelectTrigger id="folder">
+                  <SelectTrigger id="folder" className="border-2 border-border focus:border-primary">
                     <SelectValue placeholder="Selecteer map..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -380,13 +525,13 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tags" className="font-semibold text-foreground">Tags (komma gescheiden)</Label>
+                <Label htmlFor="tags" className="text-base font-bold text-foreground">Tags (komma gescheiden)</Label>
                 <Input
                   id="tags"
                   value={formData.tags}
                   readOnly
                   placeholder="noun, place"
-                  className="bg-muted/50 border-muted-foreground/20"
+                  className="bg-muted/80 border-2 border-muted-foreground/40 text-foreground font-medium"
                 />
               </div>
             </div>
@@ -397,177 +542,147 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             onAudioChange={(url) => setFormData({ ...formData, audioUrl: url || "" })}
           />
 
-          {/* OCR Section */}
-          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">Tekst uit foto (OCR)</h3>
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-              <Input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  setLastOcrFile(file)
-                  setOcrBusy(true)
-                  try {
-                    if (useCloudOCR) {
-                      const form = new FormData()
-                      form.append("file", file)
-                      form.append("lang", ocrLang === "auto" ? "auto" : ocrLang)
-                      const res = await fetch("/api/ocr", { method: "POST", body: form })
-                      const data = await res.json()
-                      const text = (data?.text || "").trim()
-                      const looksArabic = /[\u0600-\u06FF]/.test(text)
-                      if (looksArabic) setFormData((p) => ({ ...p, ar: text }))
-                      else if (ocrLang === "nld") setFormData((p) => ({ ...p, nl: text }))
-                      else if (ocrLang === "eng") setFormData((p) => ({ ...p, en: text }))
-                      else setFormData((p) => ({ ...p, nl: text }))
-                    } else if (ocrLang === "auto") {
-                      const ara = await recognizeTextFromFile(file, "ara").catch(() => ({ text: "", confidence: 0 }))
-                      const nld = await recognizeTextFromFile(file, "nld").catch(() => ({ text: "", confidence: 0 }))
-                      const eng = await recognizeTextFromFile(file, "eng").catch(() => ({ text: "", confidence: 0 }))
-                      const candidates = [ara, nld, eng].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
-                      const best = candidates[0]
-                      const text = (best?.text || "").trim()
-                      const looksArabic = /[\u0600-\u06FF]/.test(text)
-                      if (looksArabic) {
-                        setFormData((prev) => ({ ...prev, ar: text }))
-                      } else if (best === nld) {
-                        setFormData((prev) => ({ ...prev, nl: text }))
-                      } else if (best === eng) {
-                        setFormData((prev) => ({ ...prev, en: text }))
-                      } else {
-                        if (text.length <= 32) {
-                          setFormData((prev) => ({ ...prev, nl: text }))
-                        } else {
-                          setFormData((prev) => ({ ...prev, en: text }))
-                        }
-                      }
-                    } else {
-                      const res = await recognizeTextFromFile(file, ocrLang).catch(() => ({ text: "", confidence: 0 }))
-                      const text = (res.text || "").trim()
-                      if (ocrLang === "ara") {
-                        setFormData((prev) => ({ ...prev, ar: text }))
-                      } else if (ocrLang === "nld") {
-                        setFormData((prev) => ({ ...prev, nl: text }))
-                      } else {
-                        setFormData((prev) => ({ ...prev, en: text }))
-                      }
-                    }
-                  } finally {
-                    setOcrBusy(false)
-                  }
-                }}
-              />
-              <Button type="button" variant="outline" className="justify-center" disabled={ocrBusy} onClick={async () => {
-                if (!lastOcrFile) return
-                const file = lastOcrFile
-                const looksArabic = (t: string) => /[\u0600-\u06FF]/.test(t)
-                setOcrBusy(true)
-                try {
-                  if (useCloudOCR) {
-                    const form = new FormData()
-                    form.append("file", file)
-                    form.append("lang", ocrLang === "auto" ? "auto" : ocrLang)
-                    const res = await fetch("/api/ocr", { method: "POST", body: form })
-                    const data = await res.json()
-                    const text = (data?.text || "").trim()
-                    if (looksArabic(text)) setFormData((p) => ({ ...p, ar: text }))
-                    else if (ocrLang === "nld") setFormData((p) => ({ ...p, nl: text }))
-                    else if (ocrLang === "eng") setFormData((p) => ({ ...p, en: text }))
-                    else setFormData((p) => ({ ...p, nl: text }))
-                  } else if (ocrLang === "auto") {
-                    const ara = await recognizeTextFromFile(file, "ara").catch(() => ({ text: "", confidence: 0 }))
-                    const nld = await recognizeTextFromFile(file, "nld").catch(() => ({ text: "", confidence: 0 }))
-                    const eng = await recognizeTextFromFile(file, "eng").catch(() => ({ text: "", confidence: 0 }))
-                    const candidates = [ara, nld, eng].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
-                    const best = candidates[0]
-                    const text = (best?.text || "").trim()
-                    if (looksArabic(text)) setFormData((p) => ({ ...p, ar: text }))
-                    else if (best === nld) setFormData((p) => ({ ...p, nl: text }))
-                    else if (best === eng) setFormData((p) => ({ ...p, en: text }))
-                    else setFormData((p) => ({ ...p, nl: text }))
-                  } else {
-                    const res = await recognizeTextFromFile(file, ocrLang).catch(() => ({ text: "", confidence: 0 }))
-                    const text = (res.text || "").trim()
-                    if (ocrLang === "ara") setFormData((p) => ({ ...p, ar: text }))
-                    else if (ocrLang === "nld") setFormData((p) => ({ ...p, nl: text }))
-                    else setFormData((p) => ({ ...p, en: text }))
-                  }
-                } finally {
-                  setOcrBusy(false)
-                }
-              }}>
-                <Camera className="mr-2 h-4 w-4" />
-                {ocrBusy ? "Bezig..." : "Opnieuw scannen"}
-              </Button>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Live Camera Section */}
+          <div className="rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-foreground">Live Camera Vertaling</h3>
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium text-foreground">Taal</Label>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <Button
+                  type="button"
+                  variant={showLiveCamera ? "destructive" : "default"}
+                  size="sm"
+                  onClick={showLiveCamera ? stopCamera : startCamera}
+                  className="font-semibold"
+                >
+                  {showLiveCamera ? (
+                    <>
+                      <Square className="mr-2 h-4 w-4" />
+                      Stop Camera
+                    </>
+                  ) : (
+                    <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Start Camera
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {showLiveCamera && (
+              <div className="space-y-4">
+                <div className="relative rounded-lg overflow-hidden border-2 border-primary/30 bg-black">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-64 object-cover"
+                    playsInline
+                    muted
+                  />
+                  <canvas ref={canvasRef} className="hidden" />
+                  {isProcessing && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="bg-white/90 text-black px-4 py-2 rounded-lg font-semibold">
+                        Verwerken...
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {(detectedText || translatedText) && (
+                  <div className="space-y-3">
+                    <div className="bg-white/95 dark:bg-gray-900/95 rounded-lg p-4 border-2 border-primary/30">
+                      <h4 className="text-sm font-bold text-foreground mb-2">Gedetecteerde tekst:</h4>
+                      <p className="text-lg font-medium text-foreground">{detectedText || "Geen tekst gedetecteerd"}</p>
+                    </div>
+                    
+                    {translatedText && (
+                      <div className="bg-primary/10 rounded-lg p-4 border-2 border-primary/30">
+                        <h4 className="text-sm font-bold text-foreground mb-2">Vertaling:</h4>
+                        <p className="text-lg font-medium text-foreground">{translatedText}</p>
+                      </div>
+                    )}
+
+                    <Button
+                      type="button"
+                      onClick={handleUseDetectedText}
+                      className="w-full font-semibold"
+                      disabled={!detectedText && !translatedText}
+                    >
+                      Gebruik deze tekst
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!showLiveCamera && (
+              <div className="text-center py-8">
+                <Camera className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground font-medium">
+                  Klik op "Start Camera" om live tekst te scannen en te vertalen
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t border-primary/20">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-semibold text-foreground">Vertaal naar:</Label>
                 <Select value={ocrLang} onValueChange={(v) => setOcrLang(v as any)}>
                   <SelectTrigger className="h-8 w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="auto">Auto (ara/nld/eng)</SelectItem>
-                    <SelectItem value="ara">Arabisch (ara)</SelectItem>
-                    <SelectItem value="nld">Nederlands (nld)</SelectItem>
-                    <SelectItem value="eng">Engels (eng)</SelectItem>
+                    <SelectItem value="auto">Auto detectie</SelectItem>
+                    <SelectItem value="ara">Arabisch</SelectItem>
+                    <SelectItem value="nld">Nederlands</SelectItem>
+                    <SelectItem value="eng">Engels</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium text-foreground" htmlFor="cloud-ocr">Cloud OCR</Label>
-                <input id="cloud-ocr" type="checkbox" className="h-4 w-4" checked={useCloudOCR} onChange={(e) => setUseCloudOCR(e.target.checked)} />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium text-foreground" htmlFor="auto-tr">Auto vertalen</Label>
+                <Label className="text-sm font-semibold text-foreground" htmlFor="auto-tr">Auto vertalen</Label>
                 <input id="auto-tr" type="checkbox" className="h-4 w-4" checked={autoTranslate} onChange={(e) => setAutoTranslate(e.target.checked)} />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground italic">Tip: goede belichting, hoge scherpte en vlakke tekst verbeteren herkenning.</p>
           </div>
 
           {/* Preview Section */}
-          <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Preview</h3>
+          <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-primary/20 p-6 shadow-lg">
+            <h3 className="mb-4 text-lg font-bold text-foreground border-b border-primary/30 pb-2">Preview</h3>
             <div className="space-y-3">
-              <div className="rounded-lg border border-border bg-background p-4 text-center shadow-sm">
-                <div dir="rtl" className="text-3xl font-semibold text-foreground">
+              <div className="rounded-lg border-2 border-border bg-background p-6 text-center shadow-lg">
+                <div dir="rtl" className="text-4xl font-bold text-foreground">
                   {formData.ar || "..."}
                 </div>
-                {formData.translit && <div className="mt-2 text-sm font-medium text-muted-foreground">{formData.translit}</div>}
+                {formData.translit && <div className="mt-3 text-lg font-semibold text-muted-foreground">{formData.translit}</div>}
               </div>
-              <div className="flex gap-2 text-sm">
+              <div className="flex gap-3 text-base">
                 {formData.nl && (
-                  <div className="flex-1 rounded-lg border border-border bg-background p-3 shadow-sm">
-                    <span className="font-semibold text-foreground">NL:</span> <span className="text-foreground">{formData.nl}</span>
+                  <div className="flex-1 rounded-lg border-2 border-border bg-background p-4 shadow-lg">
+                    <span className="font-bold text-foreground">NL:</span> <span className="text-foreground font-semibold">{formData.nl}</span>
                   </div>
                 )}
                 {formData.en && (
-                  <div className="flex-1 rounded-lg border border-border bg-background p-3 shadow-sm">
-                    <span className="font-semibold text-foreground">EN:</span> <span className="text-foreground">{formData.en}</span>
+                  <div className="flex-1 rounded-lg border-2 border-border bg-background p-4 shadow-lg">
+                    <span className="font-bold text-foreground">EN:</span> <span className="text-foreground font-semibold">{formData.en}</span>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <DialogFooter className="flex flex-col gap-4 sm:flex-row sm:justify-between border-t border-border pt-6">
             <div className="flex justify-center sm:justify-start">
-              <Button type="button" variant="destructive" onClick={clearAllFields} className="w-full sm:w-auto">
+              <Button type="button" variant="destructive" onClick={clearAllFields} className="w-full sm:w-auto font-semibold border-2">
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Wissen
               </Button>
             </div>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none font-semibold border-2">
                 Annuleren
               </Button>
-              <Button type="submit" disabled={!formData.ar || !formData.folderId} className="flex-1 sm:flex-none">
+              <Button type="submit" disabled={!formData.ar || !formData.folderId} className="flex-1 sm:flex-none font-semibold border-2">
                 {card ? "Opslaan" : "Toevoegen"}
               </Button>
             </div>
