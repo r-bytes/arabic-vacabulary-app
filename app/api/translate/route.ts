@@ -26,6 +26,7 @@ async function tryTranslate(text: string, source: string, target: string, apiKey
         }
       }
     } catch (e) {
+      console.error(`Error with ${service.name}:`, e)
     }
   }
 
@@ -39,6 +40,7 @@ async function tryTranslate(text: string, source: string, target: string, apiKey
       }
     }
   } catch (e) {
+    console.error("Error with MyMemory:", e)
   }
 
   throw new Error("All translation services failed")

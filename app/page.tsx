@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
 import { BookOpen, Download, Plus, Search } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 
 export default function DashboardPage() {
-  const { folders, cards } = useVocabStore()
+  const router = useRouter()
+  const { folders, cards, setSelectedFolderIds } = useVocabStore()
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [editorOpen, setEditorOpen] = useState(false)
@@ -74,11 +75,23 @@ export default function DashboardPage() {
                 <Download className="md:mr-2 h-4 w-4" />
                 <span className="hidden md:inline">Import/Export</span>
               </Button>
-              <Button variant="outline" size="sm" asChild className="flex">
-                <Link href="/study">
-                  <BookOpen className="md:mr-2 h-4 w-4" />
-                  <span className="hidden md:inline">Studeren</span>
-                </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex"
+                onClick={() => {
+                  // If a folder is selected, use it for the study session
+                  if (selectedFolderId) {
+                    setSelectedFolderIds([selectedFolderId])
+                    router.push("/study?auto=1")
+                  } else {
+                    // No folder selected → go to study page without auto-start
+                    router.push("/study")
+                  }
+                }}
+              >
+                <BookOpen className="md:mr-2 h-4 w-4" />
+                <span className="hidden md:inline">Studeren</span>
               </Button>
               <Button onClick={handleAddCard} size="sm">
                 <Plus className="sm:mr-2 h-4 w-4 flex-shrink-0" />

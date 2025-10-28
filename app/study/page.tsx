@@ -9,14 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { isDue } from "@/lib/srs"
 import { useVocabStore } from "@/lib/store"
 import { ArrowLeft } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useState } from "react"
 
-export default function StudyPage() {
+function StudyPageInner() {
   const router = useRouter()
   const { cards, selectedFolderIds, dueOnly, direction } = useVocabStore()
   const [activeMode, setActiveMode] = useState<"flashcards" | "quiz" | "memory">("flashcards")
   const [sessionActive, setSessionActive] = useState(false)
+  const searchParams = useSearchParams()
 
   const sessionCards = useMemo(() => {
     let filtered = cards.filter((c) => selectedFolderIds.includes(c.folderId))
@@ -35,6 +36,14 @@ export default function StudyPage() {
   const handleStartSession = () => {
     setSessionActive(true)
   }
+
+  // Auto-start session when coming from dashboard with a preselected folder
+  useEffect(() => {
+    const auto = searchParams.get("auto")
+    if (!sessionActive && auto === "1" && selectedFolderIds.length > 0) {
+      setSessionActive(true)
+    }
+  }, [sessionActive, selectedFolderIds.length, searchParams])
 
   const handleExitSession = () => {
     setSessionActive(false)
@@ -183,5 +192,13 @@ export default function StudyPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function StudyPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Laden...</div>}>
+      <StudyPageInner />
+    </Suspense>
   )
 }

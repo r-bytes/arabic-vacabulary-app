@@ -60,6 +60,7 @@ export function AudioRecorder({ audioUrl, onAudioChange }: AudioRecorderProps) {
       }, 1000)
     } catch (error) {
       alert("Kon geen toegang krijgen tot de microfoon. Controleer je browser instellingen.")
+      console.error("Error with Audio Recorder:", error)
     }
   }
 

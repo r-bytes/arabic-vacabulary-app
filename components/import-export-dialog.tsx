@@ -130,7 +130,7 @@ export function ImportExportDialog({ open, onOpenChange }: ImportExportDialogPro
           const sortedFolders = Array.from(folderIdMap.entries())
           unmappedIds.forEach((unmappedId: unknown, index: number) => {
             if (index < sortedFolders.length) {
-              const [oldId, newId] = sortedFolders[index]
+              const [_, newId] = sortedFolders[index]
               folderIdMap.set(String(unmappedId), newId)
             } else {
               // If more unmapped IDs than folders, use the last folder

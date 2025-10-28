@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Camera, Copy, Languages, Loader2, Play, Square, X } from "lucide-react"
+import Image from "next/image"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 export function CameraTranslate() {
@@ -186,7 +187,8 @@ export function CameraTranslate() {
         // Don't clear existing text immediately, give user time to see it
       }
     } catch (err) {
-      setError("Verwerking mislukt. Probeer opnieuw.")
+      console.error("Error with Camera Translate:", err)
+      setError("Verwerking mislukt. Probeer opnieuw. Error: " + err)
     } finally {
       setIsProcessing(false)
     }
@@ -238,6 +240,7 @@ export function CameraTranslate() {
       setCopySuccess(true)
       setTimeout(() => setCopySuccess(false), 2000) // Reset after 2 seconds
     } catch (err) {
+      console.error("Error with Copy:", err)
     }
   }
 
@@ -304,10 +307,14 @@ export function CameraTranslate() {
         <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
           {/* Video or Frozen Image */}
           {isFrozen && frozenImage ? (
-            <img
+            <Image
               src={frozenImage}
               alt="Frozen frame"
               className="w-full h-full object-cover"
+              width={1920}
+              height={1080}
+              priority
+              unoptimized
             />
           ) : (
             <video
