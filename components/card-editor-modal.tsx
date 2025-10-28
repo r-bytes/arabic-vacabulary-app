@@ -192,6 +192,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
   // Live camera functions
   const startCamera = async () => {
     try {
+      console.log('Requesting camera access...')
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'environment',
@@ -199,16 +200,33 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
           height: { ideal: 1080 }
         }
       })
+      console.log('Camera stream obtained:', stream)
       streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        videoRef.current.play()
-      }
       setShowLiveCamera(true)
-      processingRef.current = true
-      processFrame()
+      
+      if (videoRef.current) {
+        console.log('Setting video srcObject...')
+        videoRef.current.srcObject = stream
+        
+        // Wait for video to load before starting processing
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded')
+          if (videoRef.current) {
+            videoRef.current.play().then(() => {
+              console.log('Video playing, starting processing...')
+              processingRef.current = true
+              processFrame()
+            }).catch(err => {
+              console.error('Video play failed:', err)
+            })
+          }
+        }
+      } else {
+        console.error('Video ref not available')
+      }
     } catch (err) {
       console.error('Camera access failed:', err)
+      alert('Camera toegang geweigerd. Controleer je browser instellingen.')
     }
   }
 
@@ -236,6 +254,13 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     const ctx = canvas.getContext('2d')
     
     if (!ctx) return
+
+    // Check if video is ready
+    if (video.readyState < 2) {
+      // Video not ready yet, try again in 100ms
+      setTimeout(processFrame, 100)
+      return
+    }
 
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
@@ -577,12 +602,27 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                     className="w-full h-64 object-cover"
                     playsInline
                     muted
+                    autoPlay
+                    onError={(e) => {
+                      console.error('Video error:', e)
+                      alert('Video laden mislukt. Probeer opnieuw.')
+                    }}
+                    onCanPlay={() => {
+                      console.log('Video can play')
+                    }}
                   />
                   <canvas ref={canvasRef} className="hidden" />
                   {isProcessing && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <div className="bg-white/90 text-black px-4 py-2 rounded-lg font-semibold">
                         Verwerken...
+                      </div>
+                    </div>
+                  )}
+                  {!isProcessing && showLiveCamera && (
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <div className="bg-white/90 text-black px-4 py-2 rounded-lg font-semibold">
+                        Camera laden...
                       </div>
                     </div>
                   )}
@@ -609,8 +649,8 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                       disabled={!detectedText && !translatedText}
                     >
                       Gebruik deze tekst
-                    </Button>
-                  </div>
+              </Button>
+            </div>
                 )}
               </div>
             )}
