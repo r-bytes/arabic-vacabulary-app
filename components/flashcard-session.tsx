@@ -218,23 +218,22 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
         onPointerDown={(e) => {
           // Left click or touch only
           if (e.pointerType === "mouse" && e.button !== 0) return
+          e.preventDefault()
           pointerActiveRef.current = true
           pointerStartXRef.current = e.clientX
           pointerDeltaXRef.current = 0
           setIsDragging(true)
           setDragX(0)
-          // Capture pointer so we keep receiving move events while dragging on mobile
-          try {
-            (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
-          } catch {}
         }}
         onPointerMove={(e) => {
           if (!pointerActiveRef.current || pointerStartXRef.current == null) return
+          e.preventDefault()
           pointerDeltaXRef.current = e.clientX - pointerStartXRef.current
           setDragX(pointerDeltaXRef.current)
         }}
-        onPointerUp={() => {
+        onPointerUp={(e) => {
           if (!pointerActiveRef.current) return
+          e.preventDefault()
           const threshold = 50
           const dx = pointerDeltaXRef.current
           pointerActiveRef.current = false
