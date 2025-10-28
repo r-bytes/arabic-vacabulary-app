@@ -442,7 +442,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             <div className="text-center py-4">
               <Camera className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground font-medium">
-                Klik op "Open Camera" om tekst te scannen en te vertalen
+                Klik op &quot;Open Camera&quot; om tekst te scannen en te vertalen
               </p>
             </div>
 
