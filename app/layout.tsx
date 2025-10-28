@@ -11,7 +11,11 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "Arabic Vocabulary App",
   description: "Learn Arabic vocabulary with flashcards, quizzes, and games",
-  generator: "v0.app",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 }
 
 export default function RootLayout({

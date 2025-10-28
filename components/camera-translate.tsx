@@ -11,7 +11,7 @@ interface CameraTranslateProps {
 }
 
 export function CameraTranslate({ onResult, targetLanguage = 'nl' }: CameraTranslateProps) {
-  const [isOpen, setIsOpen] = useState(true) // Auto-open when used in modal
+  const [isOpen, setIsOpen] = useState(false) // Don't auto-open by default
   const [isLoading, setIsLoading] = useState(false)
   const [translatedText, setTranslatedText] = useState<string>("")
   const [detectedText, setDetectedText] = useState<string>("")
@@ -212,6 +212,13 @@ export function CameraTranslate({ onResult, targetLanguage = 'nl' }: CameraTrans
   useEffect(() => {
     isOpenRef.current = isOpen
   }, [isOpen])
+
+  // Auto-open when used in modal (when onResult prop is provided)
+  useEffect(() => {
+    if (onResult) {
+      setIsOpen(true)
+    }
+  }, [onResult])
 
   const processFrame = useCallback(() => {
     if (!isOpenRef.current || !processingRef.current) return
