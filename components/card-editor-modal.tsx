@@ -163,9 +163,9 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     ttsHint: "ar-SA",
   })
   const [ocrLang, setOcrLang] = useState<"auto" | "ara" | "nld" | "eng">("auto")
-  const [ocrBusy, setOcrBusy] = useState(false)
-  const [lastOcrFile, setLastOcrFile] = useState<File | null>(null)
-  const [useCloudOCR, setUseCloudOCR] = useState(true)
+  // const [ocrBusy, setOcrBusy] = useState(false)
+  // const [lastOcrFile, setLastOcrFile] = useState<File | null>(null)
+  // const [useCloudOCR, setUseCloudOCR] = useState(true)
   const [autoTranslate, setAutoTranslate] = useState(true)
   const [showLiveCamera, setShowLiveCamera] = useState(false)
   const [detectedText, setDetectedText] = useState("")
@@ -619,7 +619,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
               <div className="text-center py-8">
                 <Camera className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground font-medium">
-                  Klik op "Start Camera" om live tekst te scannen en te vertalen
+                  Klik op &quot;Start Camera&quot; om live tekst te scannen en te vertalen
                 </p>
               </div>
             )}
@@ -627,6 +627,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t border-primary/20">
               <div className="flex items-center gap-2">
                 <Label className="text-sm font-semibold text-foreground">Vertaal naar:</Label>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Select value={ocrLang} onValueChange={(v) => setOcrLang(v as any)}>
                   <SelectTrigger className="h-8 w-[140px]">
                     <SelectValue />

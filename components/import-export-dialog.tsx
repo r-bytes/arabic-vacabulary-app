@@ -130,6 +130,7 @@ export function ImportExportDialog({ open, onOpenChange }: ImportExportDialogPro
           const sortedFolders = Array.from(folderIdMap.entries())
           unmappedIds.forEach((unmappedId: unknown, index: number) => {
             if (index < sortedFolders.length) {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               const [_, newId] = sortedFolders[index]
               folderIdMap.set(String(unmappedId), newId)
             } else {
