@@ -5,8 +5,13 @@ import { Camera, Copy, Languages, Loader2, Play, Square, X } from "lucide-react"
 import Image from "next/image"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-export function CameraTranslate() {
-  const [isOpen, setIsOpen] = useState(false)
+interface CameraTranslateProps {
+  onResult?: (detectedText: string, translatedText: string) => void
+  targetLanguage?: string
+}
+
+export function CameraTranslate({ onResult, targetLanguage = 'nl' }: CameraTranslateProps) {
+  const [isOpen, setIsOpen] = useState(true) // Auto-open when used in modal
   const [isLoading, setIsLoading] = useState(false)
   const [translatedText, setTranslatedText] = useState<string>("")
   const [detectedText, setDetectedText] = useState<string>("")
@@ -418,6 +423,19 @@ export function CameraTranslate() {
                     <p className="text-primary-foreground text-2xl font-semibold leading-relaxed">
                       {translatedText}
                     </p>
+                  </div>
+                )}
+                {(detectedText || translatedText) && onResult && (
+                  <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                    <Button
+                      onClick={() => {
+                        onResult(detectedText, translatedText)
+                        setIsOpen(false)
+                      }}
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                    >
+                      Gebruik deze tekst
+                    </Button>
                   </div>
                 )}
                 {isProcessing && !isFrozen && (

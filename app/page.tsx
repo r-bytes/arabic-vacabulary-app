@@ -121,7 +121,12 @@ export default function DashboardPage() {
               </h3>
               <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {folders.map((folder) => (
-                  <FolderDropZone key={folder.id} folderId={folder.id} folderName={folder.name} />
+                  <FolderDropZone 
+                    key={folder.id} 
+                    folderId={folder.id} 
+                    folderName={folder.name}
+                    onSelectFolder={setSelectedFolderId}
+                  />
                 ))}
               </div>
             </div>

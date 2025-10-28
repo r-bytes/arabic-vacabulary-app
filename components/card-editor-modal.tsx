@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { AudioRecorder } from "@/components/audio-recorder"
+import { CameraTranslate } from "@/components/camera-translate"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -11,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { Camera, Clipboard, Play, RotateCcw, Square } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { Camera, Clipboard, RotateCcw, X } from "lucide-react"
+import { useEffect, useState } from "react"
 
 // Enhanced Arabic to Latin transliteration with diacritics
 function transliterateArabic(arabic: string): string {
@@ -163,19 +164,8 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     ttsHint: "ar-SA",
   })
   const [ocrLang, setOcrLang] = useState<"auto" | "ara" | "nld" | "eng">("auto")
-  // const [ocrBusy, setOcrBusy] = useState(false)
-  // const [lastOcrFile, setLastOcrFile] = useState<File | null>(null)
-  // const [useCloudOCR, setUseCloudOCR] = useState(true)
   const [autoTranslate, setAutoTranslate] = useState(true)
-  const [showLiveCamera, setShowLiveCamera] = useState(false)
-  const [detectedText, setDetectedText] = useState("")
-  const [translatedText, setTranslatedText] = useState("")
-  const [isProcessing, setIsProcessing] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const processingRef = useRef(false)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [showCamera, setShowCamera] = useState(false)
 
   // Paste functionality
   const handlePaste = async (field: 'ar' | 'nl' | 'en') => {
@@ -189,136 +179,8 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     }
   }
 
-  // Live camera functions
-  const startCamera = async () => {
-    try {
-      console.log('Requesting camera access...')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      })
-      console.log('Camera stream obtained:', stream)
-      streamRef.current = stream
-      setShowLiveCamera(true)
-      
-      if (videoRef.current) {
-        console.log('Setting video srcObject...')
-        videoRef.current.srcObject = stream
-        
-        // Wait for video to load before starting processing
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded')
-          if (videoRef.current) {
-            videoRef.current.play().then(() => {
-              console.log('Video playing, starting processing...')
-              processingRef.current = true
-              processFrame()
-            }).catch(err => {
-              console.error('Video play failed:', err)
-            })
-          }
-        }
-      } else {
-        console.error('Video ref not available')
-      }
-    } catch (err) {
-      console.error('Camera access failed:', err)
-      alert('Camera toegang geweigerd. Controleer je browser instellingen.')
-    }
-  }
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
-    }
-    processingRef.current = false
-    setShowLiveCamera(false)
-    setIsProcessing(false)
-    setDetectedText("")
-    setTranslatedText("")
-  }
-
-  const processFrame = async () => {
-    if (!processingRef.current || !videoRef.current || !canvasRef.current) return
-
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    
-    if (!ctx) return
-
-    // Check if video is ready
-    if (video.readyState < 2) {
-      // Video not ready yet, try again in 100ms
-      setTimeout(processFrame, 100)
-      return
-    }
-
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    ctx.drawImage(video, 0, 0)
-
-    try {
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.8)
-      })
-
-      const formData = new FormData()
-      formData.append('file', blob, 'frame.jpg')
-      formData.append('lang', 'auto')
-
-      const response = await fetch('/api/ocr', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const text = data?.text?.trim() || ''
-        
-        if (text && text !== detectedText) {
-          setDetectedText(text)
-          
-          // Auto-translate detected text
-          try {
-            const translateResponse = await fetch('/api/translate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                text: text,
-                source: 'auto',
-                target: ocrLang === 'ara' ? 'nl' : 'ar'
-              })
-            })
-            
-            if (translateResponse.ok) {
-              const translateData = await translateResponse.json()
-              setTranslatedText(translateData?.translatedText || '')
-            }
-          } catch (err) {
-            console.error('Translation failed:', err)
-          }
-        }
-      }
-    } catch (err) {
-      console.error('OCR processing failed:', err)
-    }
-
-    // Schedule next frame
-    if (processingRef.current) {
-      timeoutRef.current = setTimeout(processFrame, 2000) // Process every 2 seconds
-    }
-  }
-
-  const handleUseDetectedText = () => {
+  // Handle camera translation result
+  const handleCameraResult = (detectedText: string, translatedText: string) => {
     if (detectedText) {
       const looksArabic = /[\u0600-\u06FF]/.test(detectedText)
       if (looksArabic) {
@@ -339,7 +201,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
         setFormData(prev => ({ ...prev, nl: translatedText }))
       }
     }
-    stopCamera()
+    setShowCamera(false)
   }
 
   useEffect(() => {
@@ -368,12 +230,6 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     }
   }, [card, defaultFolderId, folders, open])
 
-  // Cleanup camera on unmount
-  useEffect(() => {
-    return () => {
-      stopCamera()
-    }
-  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -567,102 +423,28 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             onAudioChange={(url) => setFormData({ ...formData, audioUrl: url || "" })}
           />
 
-          {/* Live Camera Section */}
-          <div className="rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-4 space-y-4">
+          {/* Camera Translation Section */}
+          <div className="rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-6 space-y-4 shadow-lg">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-foreground">Live Camera Vertaling</h3>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant={showLiveCamera ? "destructive" : "default"}
-                  size="sm"
-                  onClick={showLiveCamera ? stopCamera : startCamera}
-                  className="font-semibold"
-                >
-                  {showLiveCamera ? (
-                    <>
-                      <Square className="mr-2 h-4 w-4" />
-                      Stop Camera
-                    </>
-                  ) : (
-                    <>
-                      <Play className="mr-2 h-4 w-4" />
-                      Start Camera
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            {showLiveCamera && (
-              <div className="space-y-4">
-                <div className="relative rounded-lg overflow-hidden border-2 border-primary/30 bg-black">
-                  <video
-                    ref={videoRef}
-                    className="w-full h-64 object-cover"
-                    playsInline
-                    muted
-                    autoPlay
-                    onError={(e) => {
-                      console.error('Video error:', e)
-                      alert('Video laden mislukt. Probeer opnieuw.')
-                    }}
-                    onCanPlay={() => {
-                      console.log('Video can play')
-                    }}
-                  />
-                  <canvas ref={canvasRef} className="hidden" />
-                  {isProcessing && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <div className="bg-white/90 text-black px-4 py-2 rounded-lg font-semibold">
-                        Verwerken...
-                      </div>
-                    </div>
-                  )}
-                  {!isProcessing && showLiveCamera && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <div className="bg-white/90 text-black px-4 py-2 rounded-lg font-semibold">
-                        Camera laden...
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {(detectedText || translatedText) && (
-                  <div className="space-y-3">
-                    <div className="bg-white/95 dark:bg-gray-900/95 rounded-lg p-4 border-2 border-primary/30">
-                      <h4 className="text-sm font-bold text-foreground mb-2">Gedetecteerde tekst:</h4>
-                      <p className="text-lg font-medium text-foreground">{detectedText || "Geen tekst gedetecteerd"}</p>
-                    </div>
-                    
-                    {translatedText && (
-                      <div className="bg-primary/10 rounded-lg p-4 border-2 border-primary/30">
-                        <h4 className="text-sm font-bold text-foreground mb-2">Vertaling:</h4>
-                        <p className="text-lg font-medium text-foreground">{translatedText}</p>
-                      </div>
-                    )}
-
-                    <Button
-                      type="button"
-                      onClick={handleUseDetectedText}
-                      className="w-full font-semibold"
-                      disabled={!detectedText && !translatedText}
-                    >
-                      Gebruik deze tekst
+              <h3 className="text-lg font-bold text-foreground">Camera Vertaling</h3>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                onClick={() => setShowCamera(true)}
+                className="font-semibold border-2"
+              >
+                <Camera className="mr-2 h-4 w-4" />
+                Open Camera
               </Button>
             </div>
-                )}
-              </div>
-            )}
 
-            {!showLiveCamera && (
-              <div className="text-center py-8">
-                <Camera className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground font-medium">
-                  Klik op &quot;Start Camera&quot; om live tekst te scannen en te vertalen
-                </p>
-              </div>
-            )}
+            <div className="text-center py-4">
+              <Camera className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground font-medium">
+                Klik op "Open Camera" om tekst te scannen en te vertalen
+              </p>
+            </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t border-primary/20">
               <div className="flex items-center gap-2">
@@ -686,6 +468,31 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
               </div>
             </div>
           </div>
+
+          {/* Camera Translate Modal */}
+          {showCamera && (
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+              <div className="bg-background rounded-lg border-2 border-border shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                <div className="flex items-center justify-between p-4 border-b border-border">
+                  <h3 className="text-lg font-bold text-foreground">Camera Vertaling</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCamera(false)}
+                    className="font-semibold"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="p-4">
+                  <CameraTranslate 
+                    onResult={handleCameraResult}
+                    targetLanguage={ocrLang === 'ara' ? 'ar' : ocrLang === 'nld' ? 'nl' : 'en'}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Preview Section */}
           <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-primary/20 p-6 shadow-lg">
