@@ -28,6 +28,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   const pointerActiveRef = useRef<boolean>(false)
   const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
+  const swipeAreaRef = useRef<HTMLDivElement>(null)
 
   const currentCard = sessionCards[currentIndex]
   const progress = ((currentIndex + 1) / sessionCards.length) * 100
@@ -212,6 +213,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
       </div>
 
       <div
+        ref={swipeAreaRef}
         className="flex flex-1 items-center justify-center p-8"
         onPointerDown={(e) => {
           // Left click or touch only
@@ -221,6 +223,10 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
           pointerDeltaXRef.current = 0
           setIsDragging(true)
           setDragX(0)
+          // Capture pointer so we keep receiving move events while dragging on mobile
+          try {
+            (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+          } catch {}
         }}
         onPointerMove={(e) => {
           if (!pointerActiveRef.current || pointerStartXRef.current == null) return
@@ -243,7 +249,8 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
           // Animate off-screen then change card
           const direction = dx < 0 ? -1 : 1
           setIsDragging(false)
-          setDragX(direction * 600)
+          const areaWidth = swipeAreaRef.current?.clientWidth || window.innerWidth || 600
+          setDragX(direction * Math.ceil(areaWidth * 1.2))
           setTimeout(() => {
             setDragX(0)
             if (direction < 0) {
@@ -261,12 +268,15 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
           setIsDragging(false)
           setDragX(0)
         }}
+        // Prevent the browser from hijacking horizontal swipe (especially on iOS)
+        style={{ touchAction: "pan-y" }}
       >
         <div
           className="will-change-transform"
           style={{
             transform: `translateX(${dragX}px) rotate(${dragX / 40}deg)`,
-            transition: isDragging ? "none" : "transform 150ms ease-out",
+            opacity: Math.max(0.2, 1 - Math.min(1, Math.abs(dragX) / ((swipeAreaRef.current?.clientWidth || 300) * 0.8))),
+            transition: isDragging ? "none" : "transform 150ms ease-out, opacity 150ms ease-out",
           }}
         >
           <Flashcard card={currentCard} direction={direction} onAudio={handleAudio} />
