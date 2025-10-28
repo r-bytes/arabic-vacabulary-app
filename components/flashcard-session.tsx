@@ -1,5 +1,6 @@
 "use client"
 
+import { CardEditorModal } from "@/components/card-editor-modal"
 import { Flashcard } from "@/components/flashcard"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -8,7 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { review } from "@/lib/srs"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { ChevronLeft, ChevronRight, RotateCcw, Volume2, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit, RotateCcw, Volume2, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 interface FlashcardSessionProps {
@@ -29,6 +30,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const swipeAreaRef = useRef<HTMLDivElement>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const currentCard = sessionCards[currentIndex]
   const progress = ((currentIndex + 1) / sessionCards.length) * 100
@@ -198,6 +200,9 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
             <Button variant="outline" size="sm" onClick={handleRestart} title="Opnieuw (shuffle)">
               <RotateCcw className="mr-2 h-4 w-4" /> Opnieuw
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)} title="Bewerk kaart">
+              <Edit className="mr-2 h-4 w-4" /> Bewerk
+            </Button>
             <div className="flex items-center gap-2">
               <Switch id="auto-audio" checked={autoPlayAudio} onCheckedChange={setAutoPlayAudio} />
               <Label htmlFor="auto-audio" className="text-sm cursor-pointer">
@@ -300,6 +305,12 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
           </div>
         </div>
       </div>
+
+      <CardEditorModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        card={currentCard}
+      />
     </div>
   )
 }
