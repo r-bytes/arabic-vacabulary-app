@@ -37,7 +37,11 @@ export function CameraTranslate({ onResult, targetLanguage = 'nl' }: CameraTrans
     }
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
+      timeoutRef.current = undefined
     }
+    // Reset processing state
+    processingRef.current = false
+    setIsProcessing(false)
     // Clear cache when camera stops
     translationCache.current.clear()
     lastProcessedText.current = ""
@@ -47,6 +51,12 @@ export function CameraTranslate({ onResult, targetLanguage = 'nl' }: CameraTrans
     try {
       setError("")
       setIsLoading(true)
+      
+      // Stop any existing camera first
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+      }
       
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
@@ -64,7 +74,7 @@ export function CameraTranslate({ onResult, targetLanguage = 'nl' }: CameraTrans
       }
       
       setIsLoading(false)
-      // Start processing automatically the first time
+      // Reset and start processing
       processingRef.current = true
       onReady()
     } catch {
@@ -204,13 +214,13 @@ export function CameraTranslate({ onResult, targetLanguage = 'nl' }: CameraTrans
   }, [isOpen])
 
   const processFrame = useCallback(() => {
-    if (!isOpenRef.current) return
+    if (!isOpenRef.current || !processingRef.current) return
 
     const doProcess = async () => {
       await captureAndProcess()
       
-      // Schedule next process
-      if (isOpenRef.current) {
+      // Schedule next process only if still open and processing
+      if (isOpenRef.current && processingRef.current) {
         timeoutRef.current = setTimeout(() => {
           processFrame()
         }, 1000) // Every 1 second for faster response

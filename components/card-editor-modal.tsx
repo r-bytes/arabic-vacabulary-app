@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { AudioRecorder } from "@/components/audio-recorder"
-import { CameraTranslate } from "@/components/camera-translate"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -12,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { Camera, Clipboard, RotateCcw, X } from "lucide-react"
+import { Clipboard, RotateCcw } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Enhanced Arabic to Latin transliteration with diacritics
@@ -163,9 +162,7 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     audioUrl: "",
     ttsHint: "ar-SA",
   })
-  const [ocrLang, setOcrLang] = useState<"auto" | "ara" | "nld" | "eng">("auto")
   const [autoTranslate, setAutoTranslate] = useState(true)
-  const [showCamera, setShowCamera] = useState(false)
 
   // Paste functionality
   const handlePaste = async (field: 'ar' | 'nl' | 'en') => {
@@ -179,30 +176,6 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     }
   }
 
-  // Handle camera translation result
-  const handleCameraResult = (detectedText: string, translatedText: string) => {
-    if (detectedText) {
-      const looksArabic = /[\u0600-\u06FF]/.test(detectedText)
-      if (looksArabic) {
-        setFormData(prev => ({ ...prev, ar: detectedText }))
-      } else if (ocrLang === 'nld') {
-        setFormData(prev => ({ ...prev, nl: detectedText }))
-      } else if (ocrLang === 'eng') {
-        setFormData(prev => ({ ...prev, en: detectedText }))
-      } else {
-        setFormData(prev => ({ ...prev, nl: detectedText }))
-      }
-    }
-    if (translatedText) {
-      const looksArabic = /[\u0600-\u06FF]/.test(translatedText)
-      if (looksArabic) {
-        setFormData(prev => ({ ...prev, ar: translatedText }))
-      } else {
-        setFormData(prev => ({ ...prev, nl: translatedText }))
-      }
-    }
-    setShowCamera(false)
-  }
 
   useEffect(() => {
     if (card) {
@@ -423,76 +396,6 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             onAudioChange={(url) => setFormData({ ...formData, audioUrl: url || "" })}
           />
 
-          {/* Camera Translation Section */}
-          <div className="rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 p-6 space-y-4 shadow-lg">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-foreground">Camera Vertaling</h3>
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                onClick={() => setShowCamera(true)}
-                className="font-semibold border-2"
-              >
-                <Camera className="mr-2 h-4 w-4" />
-                Open Camera
-              </Button>
-            </div>
-
-            <div className="text-center py-4">
-              <Camera className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground font-medium">
-                Klik op &quot;Open Camera&quot; om tekst te scannen en te vertalen
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t border-primary/20">
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-semibold text-foreground">Vertaal naar:</Label>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <Select value={ocrLang} onValueChange={(v) => setOcrLang(v as any)}>
-                  <SelectTrigger className="h-8 w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">Auto detectie</SelectItem>
-                    <SelectItem value="ara">Arabisch</SelectItem>
-                    <SelectItem value="nld">Nederlands</SelectItem>
-                    <SelectItem value="eng">Engels</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-semibold text-foreground" htmlFor="auto-tr">Auto vertalen</Label>
-                <input id="auto-tr" type="checkbox" className="h-4 w-4" checked={autoTranslate} onChange={(e) => setAutoTranslate(e.target.checked)} />
-              </div>
-            </div>
-          </div>
-
-          {/* Camera Translate Modal */}
-          {showCamera && (
-            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-              <div className="bg-background rounded-lg border-2 border-border shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                  <h3 className="text-lg font-bold text-foreground">Camera Vertaling</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowCamera(false)}
-                    className="font-semibold"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="p-4">
-                  <CameraTranslate 
-                    onResult={handleCameraResult}
-                    targetLanguage={ocrLang === 'ara' ? 'ar' : ocrLang === 'nld' ? 'nl' : 'en'}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Preview Section */}
           <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-primary/20 p-6 shadow-lg">
