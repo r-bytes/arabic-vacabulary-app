@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { review } from "@/lib/srs"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { ChevronLeft, ChevronRight, Edit, RotateCcw, Volume2, X } from "lucide-react"
+import { Bookmark, BookmarkCheck, ChevronLeft, ChevronRight, Edit, RotateCcw, Volume2, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 interface FlashcardSessionProps {
@@ -31,6 +31,8 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   const [isDragging, setIsDragging] = useState(false)
   const swipeAreaRef = useRef<HTMLDivElement>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [reviewCards, setReviewCards] = useState<Set<string>>(new Set())
+  const [showReview, setShowReview] = useState(false)
 
   const currentCard = sessionCards[currentIndex]
   const progress = ((currentIndex + 1) / sessionCards.length) * 100
@@ -100,7 +102,32 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   const handleRestart = () => {
     setSessionCards((prev) => shuffle(prev))
     setCurrentIndex(0)
+    setReviewCards(new Set())
+    setShowReview(false)
   }
+
+  const toggleReview = (cardId: string) => {
+    setReviewCards((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(cardId)) {
+        newSet.delete(cardId)
+      } else {
+        newSet.add(cardId)
+      }
+      return newSet
+    })
+  }
+
+  const startReview = () => {
+    const reviewCardsList = sessionCards.filter(card => reviewCards.has(card.id))
+    if (reviewCardsList.length > 0) {
+      setSessionCards(reviewCardsList)
+      setCurrentIndex(0)
+      setShowReview(true)
+    }
+  }
+
+  const isMarkedForReview = reviewCards.has(currentCard?.id || "")
 
   const handleGrade = (grade: number) => {
     const newSrs = review(currentCard.srs, grade)
@@ -116,7 +143,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
 
     if (currentCard.audioUrl) {
       const audio = new Audio(currentCard.audioUrl)
-      audio.play().catch((err) => console.error("[v0] Audio playback failed:", err))
+      audio.play().catch((err) => console.error("Audio playback failed:", err))
     } else if (textToSpeak) {
       // Try cloud TTS first, then fall back to browser TTS
       const lang = direction.startsWith("ar-") || direction.endsWith("-ar") ? "ar" : direction.includes("nl") ? "nl" : "en"
@@ -177,11 +204,26 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <h2 className="mb-4 text-2xl font-bold">Sessie voltooid!</h2>
-          <div className="flex items-center justify-center gap-3">
-            <Button variant="default" onClick={handleRestart}>
-              <RotateCcw className="mr-2 h-4 w-4" /> Opnieuw (shuffle)
-            </Button>
+          <h2 className="mb-4 text-2xl font-bold">
+            {showReview ? "Review voltooid!" : "Sessie voltooid!"}
+          </h2>
+          {reviewCards.size > 0 && !showReview && (
+            <p className="mb-4 text-muted-foreground">
+              Je hebt {reviewCards.size} woorden gemarkeerd voor review
+            </p>
+          )}
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex items-center gap-3">
+              <Button variant="default" onClick={handleRestart}>
+                <RotateCcw className="mr-2 h-4 w-4" /> Opnieuw (shuffle)
+              </Button>
+              {reviewCards.size > 0 && !showReview && (
+                <Button variant="default" onClick={startReview}>
+                  <BookmarkCheck className="mr-2 h-4 w-4" />
+                  Start Review ({reviewCards.size})
+                </Button>
+              )}
+            </div>
             <Button onClick={onExit}>Terug naar overzicht</Button>
           </div>
         </div>
@@ -194,7 +236,10 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
       <div className="border-b bg-card p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Kaart {currentIndex + 1} van {sessionCards.length}
+            {showReview ? "Review: " : ""}Kaart {currentIndex + 1} van {sessionCards.length}
+            {reviewCards.size > 0 && !showReview && (
+              <span className="ml-2 text-primary">({reviewCards.size} gemarkeerd voor review)</span>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={handleRestart} title="Opnieuw (shuffle)">
@@ -203,6 +248,25 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
             <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)} title="Bewerk kaart">
               <Edit className="mr-2 h-4 w-4" /> Bewerk
             </Button>
+            <Button 
+              variant={isMarkedForReview ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => toggleReview(currentCard.id)}
+              title={isMarkedForReview ? "Verwijder uit review" : "Markeer voor review"}
+            >
+              {isMarkedForReview ? (
+                <BookmarkCheck className="mr-2 h-4 w-4" />
+              ) : (
+                <Bookmark className="mr-2 h-4 w-4" />
+              )}
+              {isMarkedForReview ? "In Review" : "Review"}
+            </Button>
+            {reviewCards.size > 0 && !showReview && (
+              <Button variant="default" size="sm" onClick={startReview} title="Start review sessie">
+                <BookmarkCheck className="mr-2 h-4 w-4" />
+                Start Review ({reviewCards.size})
+              </Button>
+            )}
             <div className="flex items-center gap-2">
               <Switch id="auto-audio" checked={autoPlayAudio} onCheckedChange={setAutoPlayAudio} />
               <Label htmlFor="auto-audio" className="text-sm cursor-pointer">

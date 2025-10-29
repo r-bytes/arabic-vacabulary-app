@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress"
 import type { Card, Direction } from "@/lib/types"
 import { Check, Volume2, XIcon } from "lucide-react"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 interface QuizMCQProps {
   cards: Card[]
@@ -77,9 +78,23 @@ export function QuizMCQ({ cards, direction, onComplete }: QuizMCQProps) {
     setSelectedAnswer(index)
     setShowFeedback(true)
 
-    const isCorrect = options[index] === getCorrectAnswer()
+    const correctAnswer = getCorrectAnswer()
+    const isCorrect = options[index] === correctAnswer
+
     if (isCorrect) {
       setScore(score + 1)
+      toast.success("Correct! ✓", {
+        duration: 1500,
+      })
+      // Auto-advance after 1.5 seconds
+      setTimeout(() => {
+        handleNext()
+      }, 1500)
+    } else {
+      toast.error("Helaas, niet juist", {
+        description: `Correct antwoord: ${correctAnswer}`,
+        duration: 3000,
+      })
     }
   }
 
@@ -98,7 +113,7 @@ export function QuizMCQ({ cards, direction, onComplete }: QuizMCQProps) {
 
     if (currentCard.audioUrl) {
       const audio = new Audio(currentCard.audioUrl)
-      audio.play().catch((err) => console.error("[v0] Audio playback failed:", err))
+      audio.play().catch((err) => console.error("Audio playback failed:", err))
     } else if (textToSpeak) {
       const lang = direction.startsWith("ar-") || direction.endsWith("-ar") ? "ar" : direction.includes("nl") ? "nl" : "en"
       fetch("/api/tts", {
@@ -151,18 +166,20 @@ export function QuizMCQ({ cards, direction, onComplete }: QuizMCQProps) {
         <Progress value={progress} className="h-2" />
       </div>
 
-      <div className="mb-8 rounded-2xl border-2 bg-card p-8 text-center shadow-lg">
-        <div className="mb-4 flex items-center justify-center gap-2">
-          <div dir={question.dir} className="text-4xl font-bold">
-            {question.text}
+        <div className="mb-8 rounded-2xl border-2 bg-card p-8 text-center shadow-lg">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="flex-1"></div>
+            <div dir={question.dir} className="text-4xl font-bold flex-shrink-0">
+              {question.text}
+            </div>
+            <div className="flex-1 flex justify-end">
+              <Button variant="default" size="lg" onClick={handleAudio} className="h-12 w-12 rounded-full">
+                <Volume2 className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-          <Button variant="default" size="lg" onClick={handleAudio} className="h-12 w-12 rounded-full">
-            <Volume2 className="h-5 w-5" />
-          </Button>
+          {question.subtext && <div className="text-lg text-muted-foreground">{question.subtext}</div>}
         </div>
-        {question.subtext && <div className="text-lg text-muted-foreground">{question.subtext}</div>}
-      </div>
-
       <div className="mb-6 space-y-3">
         {options.map((option, index) => {
           const isSelected = selectedAnswer === index
@@ -197,18 +214,6 @@ export function QuizMCQ({ cards, direction, onComplete }: QuizMCQProps) {
         })}
       </div>
 
-      {showFeedback && (
-        <div className="mb-6 rounded-lg border bg-card p-4">
-          <div className={`text-center font-medium ${isCorrect ? "text-green-600" : "text-red-600"}`}>
-            {isCorrect ? "Correct!" : "Helaas, dat is niet juist."}
-          </div>
-          {!isCorrect && (
-            <div className="mt-2 text-center text-sm text-muted-foreground">
-              Het juiste antwoord is: <span className="font-medium">{correctAnswer}</span>
-            </div>
-          )}
-        </div>
-      )}
 
       {showFeedback && (
         <Button onClick={handleNext} className="w-full" size="lg">

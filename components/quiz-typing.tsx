@@ -9,6 +9,7 @@ import type { Card, Direction } from "@/lib/types"
 import { compareArabic } from "@/lib/utils-arabic"
 import { Check, Volume2, XIcon } from "lucide-react"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 
 interface QuizTypingProps {
   cards: Card[]
@@ -85,8 +86,21 @@ export function QuizTyping({ cards, direction, onComplete }: QuizTypingProps) {
 
     setIsCorrect(correct)
     setShowFeedback(true)
+    
+    // Show toast notification
     if (correct) {
-      setScore(score + 1)
+      toast.success("Correct! ✓", {
+        duration: 1500,
+      })
+      // Auto-advance after 1.5 seconds
+      setTimeout(() => {
+        handleNext()
+      }, 1500)
+    } else {
+      toast.error("Helaas, niet juist", {
+        description: `Correct antwoord: ${correctAnswer}`,
+        duration: 3000,
+      })
     }
   }
 
@@ -98,13 +112,25 @@ export function QuizTyping({ cards, direction, onComplete }: QuizTypingProps) {
   }
 
   const handleNext = () => {
+    // Check current answer if not already checked
+    if (!showFeedback && userAnswer.trim()) {
+      checkAnswer()
+    }
+    
+    // Calculate final score including current question
+    const currentQuestionScore = isCorrect ? 1 : 0
+    const finalScore = score + currentQuestionScore
+    
     if (currentIndex < cards.length - 1) {
+      // Update score for next question
+      setScore(finalScore)
       setCurrentIndex(currentIndex + 1)
       setUserAnswer("")
       setShowFeedback(false)
       setIsCorrect(false)
     } else {
-      onComplete(score)
+      // Quiz completed, return final score
+      onComplete(finalScore)
     }
   }
 
@@ -113,7 +139,7 @@ export function QuizTyping({ cards, direction, onComplete }: QuizTypingProps) {
 
     if (currentCard.audioUrl) {
       const audio = new Audio(currentCard.audioUrl)
-      audio.play().catch((err) => console.error("[v0] Audio playback failed:", err))
+      audio.play().catch((err) => console.error("Audio playback failed:", err))
     } else if (textToSpeak) {
       const lang = direction.startsWith("ar-") || direction.endsWith("-ar") ? "ar" : direction.includes("nl") ? "nl" : "en"
       fetch("/api/tts", {
@@ -187,13 +213,16 @@ export function QuizTyping({ cards, direction, onComplete }: QuizTypingProps) {
       </div>
 
       <div className="mb-8 rounded-2xl border-2 bg-card p-8 text-center shadow-lg">
-        <div className="mb-4 flex items-center justify-center gap-2">
-          <div dir={question.dir} className="text-4xl font-bold">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="flex-1"></div>
+          <div dir={question.dir} className="text-4xl font-bold flex-shrink-0">
             {question.text}
           </div>
-          <Button variant="default" size="lg" onClick={handleAudio} className="h-12 w-12 rounded-full">
-            <Volume2 className="h-5 w-5" />
-          </Button>
+          <div className="flex-1 flex justify-end">
+            <Button variant="default" size="lg" onClick={handleAudio} className="h-12 w-12 rounded-full">
+              <Volume2 className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
         {question.subtext && <div className="text-lg text-muted-foreground">{question.subtext}</div>}
       </div>
