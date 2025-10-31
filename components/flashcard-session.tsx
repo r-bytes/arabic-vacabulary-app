@@ -385,7 +385,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
 
       <div
         ref={swipeAreaRef}
-        className="flex flex-1 items-center justify-center p-8"
+        className="flex flex-1 items-center justify-center p-4 sm:p-6 md:p-8 overflow-hidden"
         onPointerDown={(e) => {
           // Left click or touch only
           if (e.pointerType === "mouse" && e.button !== 0) return
