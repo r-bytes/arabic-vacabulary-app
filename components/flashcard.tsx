@@ -163,12 +163,6 @@ export function Flashcard({ card, direction, onAudio }: FlashcardProps) {
           <RotateCcw className="h-4 w-4" />
           <span>Klik of druk op spatie om te draaien</span>
         </div>
-        {onAudio && (
-          <div className="flex items-center gap-2">
-            <Volume2 className="h-4 w-4" />
-            <span>Klik op de knop om audio af te spelen</span>
-          </div>
-        )}
       </div>
     </div>
   )

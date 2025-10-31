@@ -49,6 +49,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [reviewCards, setReviewCards] = useState<Set<string>>(new Set())
   const [showReview, setShowReview] = useState(false)
+  const originalIndexRef = useRef<number>(0) // Remember position when entering review
 
   const currentCard = sessionCards[currentIndex]
   const progress = ((currentIndex + 1) / sessionCards.length) * 100
@@ -150,6 +151,8 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   const startReview = () => {
     const reviewCardsList = sessionCards.filter(card => reviewCards.has(card.id))
     if (reviewCardsList.length > 0) {
+      // Remember current position before entering review
+      originalIndexRef.current = currentIndex
       setSessionCards(reviewCardsList)
       setCurrentIndex(0)
       setShowReview(true)
@@ -157,10 +160,19 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   }
 
   const exitReview = () => {
-    // Return to original cards when exiting review
+    // Return to original cards and position when exiting review
     setSessionCards(originalCardsRef.current)
-    setCurrentIndex(0)
+    setCurrentIndex(originalIndexRef.current)
     setShowReview(false)
+  }
+  
+  const handleExit = () => {
+    // If in review mode, exit review first instead of closing session
+    if (showReview) {
+      exitReview()
+    } else {
+      onExit()
+    }
   }
 
   const isMarkedForReview = reviewCards.has(currentCard?.id || "")
@@ -279,17 +291,22 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
                 </div>
               </>
             ) : (
-              <div className="flex w-full gap-3">
-                <Button variant="default" size="lg" onClick={exitReview} className="flex-1">
-                  <RotateCcw className="mr-2 h-4 w-4" /> Terug naar volledige set
+              <>
+                <Button variant="default" size="lg" onClick={exitReview} className="w-full bg-primary hover:bg-primary/90">
+                  <ChevronRight className="mr-2 h-5 w-5" /> Doorgaan vanaf waar je was
                 </Button>
-                <Button variant="outline" size="lg" onClick={handleShuffle} className="flex-1">
-                  <Shuffle className="mr-2 h-4 w-4" /> Shuffle & Opnieuw
-                </Button>
-              </div>
+                <div className="flex w-full gap-3">
+                  <Button variant="outline" size="lg" onClick={handleRestart} className="flex-1">
+                    <RotateCcw className="mr-2 h-4 w-4" /> Opnieuw vanaf begin
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={handleShuffle} className="flex-1">
+                    <Shuffle className="mr-2 h-4 w-4" /> Shuffle
+                  </Button>
+                </div>
+              </>
             )}
-            <Button variant="ghost" onClick={onExit} className="w-full">
-              Terug naar overzicht
+            <Button variant="ghost" onClick={handleExit} className="w-full">
+              {showReview ? "Terug naar overzicht" : "Terug naar overzicht"}
             </Button>
           </div>
         </div>
@@ -358,7 +375,7 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
                 Auto-play audio
               </Label>
             </div>
-            <Button variant="ghost" size="icon" onClick={onExit} className="h-8 w-8">
+            <Button variant="ghost" size="icon" onClick={handleExit} className="h-8 w-8" title={showReview ? "Uit review mode" : "Sluit sessie"}>
               <X className="h-4 w-4" />
             </Button>
           </div>
