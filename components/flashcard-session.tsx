@@ -305,8 +305,9 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
                 </div>
               </>
             )}
-            <Button variant="ghost" onClick={handleExit} className="w-full">
-              {showReview ? "Terug naar overzicht" : "Terug naar overzicht"}
+            <Button variant="outline" size="lg" onClick={onExit} className="w-full border-2 mt-2">
+              <X className="mr-2 h-4 w-4" />
+              Sessie beëindigen
             </Button>
           </div>
         </div>
