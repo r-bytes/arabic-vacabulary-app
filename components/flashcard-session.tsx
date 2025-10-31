@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { review } from "@/lib/srs"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { Bookmark, BookmarkCheck, ChevronLeft, ChevronRight, Edit, RotateCcw, Volume2, X } from "lucide-react"
+import { Bookmark, BookmarkCheck, ChevronLeft, ChevronRight, Edit, RotateCcw, Shuffle, Volume2, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 interface FlashcardSessionProps {
@@ -21,16 +21,20 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   const { direction, updateCard, cards: storeCards } = useVocabStore()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [sessionCards, setSessionCards] = useState<Card[]>(cards)
+  const originalCardsRef = useRef<Card[]>(cards)
   
   // Sync sessionCards with store when cards are updated
   useEffect(() => {
     if (storeCards.length > 0) {
-      setSessionCards(prev => {
-        return prev.map(card => {
+      const updateCards = (cardList: Card[]) => {
+        return cardList.map(card => {
           const updatedCard = storeCards.find(c => c.id === card.id)
           return updatedCard || card
         })
-      })
+      }
+      
+      setSessionCards(prev => updateCards(prev))
+      originalCardsRef.current = updateCards(originalCardsRef.current)
     }
   }, [storeCards])
   const isApple = typeof navigator !== "undefined" && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)
@@ -112,10 +116,23 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   }
 
   const handleRestart = () => {
-    setSessionCards((prev) => shuffle(prev))
+    // Continue from start without shuffle
     setCurrentIndex(0)
     setReviewCards(new Set())
     setShowReview(false)
+  }
+
+  const handleShuffle = () => {
+    // Explicit shuffle - only when clicked
+    if (showReview) {
+      // Shuffle review cards
+      const reviewCardsList = sessionCards.filter(card => reviewCards.has(card.id))
+      setSessionCards(shuffle(reviewCardsList))
+    } else {
+      // Shuffle all cards
+      setSessionCards((prev) => shuffle(prev))
+    }
+    setCurrentIndex(0)
   }
 
   const toggleReview = (cardId: string) => {
@@ -137,6 +154,13 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
       setCurrentIndex(0)
       setShowReview(true)
     }
+  }
+
+  const exitReview = () => {
+    // Return to original cards when exiting review
+    setSessionCards(originalCardsRef.current)
+    setCurrentIndex(0)
+    setShowReview(false)
   }
 
   const isMarkedForReview = reviewCards.has(currentCard?.id || "")
@@ -214,29 +238,59 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
 
   if (!currentCard) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
+      <div className="flex h-full items-center justify-center p-4">
+        <div className="text-center max-w-md">
           <h2 className="mb-4 text-2xl font-bold">
-            {showReview ? "Review voltooid!" : "Sessie voltooid!"}
+            {showReview ? "Review voltooid! 🎉" : "Sessie voltooid! 🎉"}
           </h2>
+          
           {reviewCards.size > 0 && !showReview && (
-            <p className="mb-4 text-muted-foreground">
-              Je hebt {reviewCards.size} woorden gemarkeerd voor review
-            </p>
-          )}
-          <div className="flex flex-col items-center justify-center gap-3">
-            <div className="flex items-center gap-3">
-              <Button variant="default" onClick={handleRestart}>
-                <RotateCcw className="mr-2 h-4 w-4" /> Opnieuw (shuffle)
-              </Button>
-              {reviewCards.size > 0 && !showReview && (
-                <Button variant="default" onClick={startReview}>
-                  <BookmarkCheck className="mr-2 h-4 w-4" />
-                  Start Review ({reviewCards.size})
-                </Button>
-              )}
+            <div className="mb-6 rounded-lg bg-primary/10 p-4">
+              <p className="mb-2 text-lg font-semibold text-primary">
+                {reviewCards.size} woorden gemarkeerd voor review
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Oefen deze woorden extra voor betere beheersing
+              </p>
             </div>
-            <Button onClick={onExit}>Terug naar overzicht</Button>
+          )}
+          
+          <div className="flex flex-col items-center justify-center gap-3">
+            {!showReview ? (
+              <>
+                {reviewCards.size > 0 && (
+                  <Button 
+                    variant="default" 
+                    size="lg" 
+                    onClick={startReview}
+                    className="w-full bg-primary hover:bg-primary/90"
+                  >
+                    <BookmarkCheck className="mr-2 h-5 w-5" />
+                    Start Review ({reviewCards.size} kaarten)
+                  </Button>
+                )}
+                <div className="flex w-full gap-3">
+                  <Button variant="outline" size="lg" onClick={handleRestart} className="flex-1">
+                    <RotateCcw className="mr-2 h-4 w-4" /> Opnieuw
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={handleShuffle} className="flex-1">
+                    <Shuffle className="mr-2 h-4 w-4" /> Shuffle
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex w-full gap-3">
+                <Button variant="default" size="lg" onClick={exitReview} className="flex-1">
+                  <RotateCcw className="mr-2 h-4 w-4" /> Terug naar volledige set
+                </Button>
+                <Button variant="outline" size="lg" onClick={handleShuffle} className="flex-1">
+                  <Shuffle className="mr-2 h-4 w-4" /> Shuffle & Opnieuw
+                </Button>
+              </div>
+            )}
+            <Button variant="ghost" onClick={onExit} className="w-full">
+              Terug naar overzicht
+            </Button>
           </div>
         </div>
       </div>
@@ -254,9 +308,20 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRestart} title="Opnieuw (shuffle)" className="text-xs">
-              <RotateCcw className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Opnieuw</span>
-            </Button>
+            {!showReview ? (
+              <>
+                <Button variant="outline" size="sm" onClick={handleRestart} title="Opnieuw vanaf begin" className="text-xs">
+                  <RotateCcw className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Opnieuw</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleShuffle} title="Shuffle kaarten" className="text-xs">
+                  <Shuffle className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Shuffle</span>
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={exitReview} title="Terug naar volledige set" className="text-xs">
+                <X className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Uit Review</span>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)} title="Bewerk kaart" className="text-xs">
               <Edit className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Bewerk</span>
             </Button>
@@ -274,11 +339,17 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
               )}
               <span className="hidden sm:inline">Review</span>
             </Button>
-            {reviewCards.size > 0 && !showReview && (
-              <Button variant="default" size="sm" onClick={startReview} title="Start review sessie" className="text-xs">
+            {reviewCards.size > 0 && (
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={startReview} 
+                title={`Start review met ${reviewCards.size} kaarten`} 
+                className="text-xs bg-primary hover:bg-primary/90"
+              >
                 <BookmarkCheck className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Start Review</span>
-                <span className="sm:hidden">({reviewCards.size})</span>
+                <span className="hidden sm:inline">Review ({reviewCards.size})</span>
+                <span className="sm:hidden">{reviewCards.size}</span>
               </Button>
             )}
             <div className="flex items-center gap-2">
