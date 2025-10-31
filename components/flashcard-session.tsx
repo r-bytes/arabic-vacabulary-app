@@ -18,9 +18,21 @@ interface FlashcardSessionProps {
 }
 
 export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
-  const { direction, updateCard } = useVocabStore()
+  const { direction, updateCard, cards: storeCards } = useVocabStore()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [sessionCards, setSessionCards] = useState<Card[]>(cards)
+  
+  // Sync sessionCards with store when cards are updated
+  useEffect(() => {
+    if (storeCards.length > 0) {
+      setSessionCards(prev => {
+        return prev.map(card => {
+          const updatedCard = storeCards.find(c => c.id === card.id)
+          return updatedCard || card
+        })
+      })
+    }
+  }, [storeCards])
   const isApple = typeof navigator !== "undefined" && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)
   const [autoPlayAudio, setAutoPlayAudio] = useState(!isApple)
   const [hasInteracted, setHasInteracted] = useState(false)
@@ -234,46 +246,48 @@ export function FlashcardSession({ cards, onExit }: FlashcardSessionProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b bg-card p-4">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-muted-foreground">
             {showReview ? "Review: " : ""}Kaart {currentIndex + 1} van {sessionCards.length}
             {reviewCards.size > 0 && !showReview && (
-              <span className="ml-2 text-primary">({reviewCards.size} gemarkeerd voor review)</span>
+              <span className="ml-2 text-primary hidden sm:inline">({reviewCards.size} gemarkeerd)</span>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={handleRestart} title="Opnieuw (shuffle)">
-              <RotateCcw className="mr-2 h-4 w-4" /> Opnieuw
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleRestart} title="Opnieuw (shuffle)" className="text-xs">
+              <RotateCcw className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Opnieuw</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)} title="Bewerk kaart">
-              <Edit className="mr-2 h-4 w-4" /> Bewerk
+            <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)} title="Bewerk kaart" className="text-xs">
+              <Edit className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Bewerk</span>
             </Button>
             <Button 
               variant={isMarkedForReview ? "default" : "outline"} 
               size="sm" 
               onClick={() => toggleReview(currentCard.id)}
               title={isMarkedForReview ? "Verwijder uit review" : "Markeer voor review"}
+              className="text-xs"
             >
               {isMarkedForReview ? (
-                <BookmarkCheck className="mr-2 h-4 w-4" />
+                <BookmarkCheck className="h-4 w-4 sm:mr-2" />
               ) : (
-                <Bookmark className="mr-2 h-4 w-4" />
+                <Bookmark className="h-4 w-4 sm:mr-2" />
               )}
-              {isMarkedForReview ? "In Review" : "Review"}
+              <span className="hidden sm:inline">Review</span>
             </Button>
             {reviewCards.size > 0 && !showReview && (
-              <Button variant="default" size="sm" onClick={startReview} title="Start review sessie">
-                <BookmarkCheck className="mr-2 h-4 w-4" />
-                Start Review ({reviewCards.size})
+              <Button variant="default" size="sm" onClick={startReview} title="Start review sessie" className="text-xs">
+                <BookmarkCheck className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Start Review</span>
+                <span className="sm:hidden">({reviewCards.size})</span>
               </Button>
             )}
             <div className="flex items-center gap-2">
               <Switch id="auto-audio" checked={autoPlayAudio} onCheckedChange={setAutoPlayAudio} />
-              <Label htmlFor="auto-audio" className="text-sm cursor-pointer">
+              <Label htmlFor="auto-audio" className="text-xs sm:text-sm cursor-pointer hidden sm:inline">
                 Auto-play audio
               </Label>
             </div>
-            <Button variant="ghost" size="icon" onClick={onExit}>
+            <Button variant="ghost" size="icon" onClick={onExit} className="h-8 w-8">
               <X className="h-4 w-4" />
             </Button>
           </div>
