@@ -1,11 +1,16 @@
 import { query } from "@/lib/db"
 import { NextResponse } from "next/server"
+import { requireAuth } from "@/lib/auth-helpers"
 
 export async function GET(): Promise<Response> {
+  const user = await requireAuth()
+  if (user instanceof NextResponse) return user // Error response
+
   const [rows] = await query(
     `SELECT id, ar, translit, nl, en, tags, folder_id as folderId, audio_url as audioUrl, tts_hint as ttsHint,
             srs_interval as srsInterval, srs_ease as srsEase, srs_due as srsDue
-       FROM cards`
+       FROM cards WHERE user_id = ?`,
+    [user.id]
   )
   const cards = rows.map((r) => ({
     id: String(r.id),
@@ -22,17 +27,27 @@ export async function GET(): Promise<Response> {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  const user = await requireAuth()
+  if (user instanceof NextResponse) return user // Error response
+
   try {
     const body = await req.json()
     if (!body?.ar || !body?.folderId) {
       return NextResponse.json({ error: "Missing ar/folderId" }, { status: 400 })
     }
+    
+    // Verify folder belongs to user
+    const [folders]: any = await query("SELECT id FROM folders WHERE id = ? AND user_id = ?", [body.folderId, user.id])
+    if (folders.length === 0) {
+      return NextResponse.json({ error: "Folder not found or unauthorized" }, { status: 404 })
+    }
+    
     const tags = body.tags ? body.tags.join(",") : null
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [result]: any = await query(
-      `INSERT INTO cards (ar, translit, nl, en, tags, folder_id, audio_url, tts_hint)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [body.ar, body.translit || null, body.gloss?.nl || null, body.gloss?.en || null, tags, body.folderId, body.audioUrl || null, body.ttsHint || null]
+      `INSERT INTO cards (ar, translit, nl, en, tags, folder_id, user_id, audio_url, tts_hint)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [body.ar, body.translit || null, body.gloss?.nl || null, body.gloss?.en || null, tags, body.folderId, user.id, body.audioUrl || null, body.ttsHint || null]
     )
     const id = String(result.insertId)
     return NextResponse.json({ id, ...body })
@@ -42,8 +57,25 @@ export async function POST(req: Request): Promise<Response> {
 }
 
 export async function PUT(req: Request): Promise<Response> {
+  const user = await requireAuth()
+  if (user instanceof NextResponse) return user // Error response
+
   const body = await req.json()
   if (!body?.id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
+  
+  // Verify card belongs to user
+  const [cards]: any = await query("SELECT id FROM cards WHERE id = ? AND user_id = ?", [body.id, user.id])
+  if (cards.length === 0) {
+    return NextResponse.json({ error: "Card not found or unauthorized" }, { status: 404 })
+  }
+  
+  // If folderId is being updated, verify new folder belongs to user
+  if (body.folderId !== undefined) {
+    const [folders]: any = await query("SELECT id FROM folders WHERE id = ? AND user_id = ?", [body.folderId, user.id])
+    if (folders.length === 0) {
+      return NextResponse.json({ error: "Folder not found or unauthorized" }, { status: 404 })
+    }
+  }
   
   // Only update fields that are provided (partial updates)
   const updates: string[] = []
@@ -93,15 +125,25 @@ export async function PUT(req: Request): Promise<Response> {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 })
   }
   
-  values.push(body.id)
-  await query(`UPDATE cards SET ${updates.join(', ')} WHERE id=?`, values)
+  values.push(body.id, user.id)
+  await query(`UPDATE cards SET ${updates.join(', ')} WHERE id=? AND user_id=?`, values)
   return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(req: Request): Promise<Response> {
+  const user = await requireAuth()
+  if (user instanceof NextResponse) return user // Error response
+
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
-  await query("DELETE FROM cards WHERE id=?", [id])
+  
+  // Verify card belongs to user
+  const [cards]: any = await query("SELECT id FROM cards WHERE id = ? AND user_id = ?", [id, user.id])
+  if (cards.length === 0) {
+    return NextResponse.json({ error: "Card not found or unauthorized" }, { status: 404 })
+  }
+  
+  await query("DELETE FROM cards WHERE id=? AND user_id=?", [id, user.id])
   return NextResponse.json({ ok: true })
 }
 

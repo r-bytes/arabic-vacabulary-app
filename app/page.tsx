@@ -1,5 +1,6 @@
 "use client"
 
+import { AuthButton } from "@/components/auth-button"
 import { CameraTranslate } from "@/components/camera-translate"
 import { CardEditorModal } from "@/components/card-editor-modal"
 import { CardsGrid } from "@/components/cards-grid"
@@ -14,15 +15,31 @@ import type { Card } from "@/lib/types"
 import { BookOpen, Download, Plus, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
+import { useSession } from "next-auth/react"
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const { folders, cards, setSelectedFolderIds } = useVocabStore()
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingCard, setEditingCard] = useState<Card | undefined>(undefined)
   const [importExportOpen, setImportExportOpen] = useState(false)
+
+  // Redirect to login if not authenticated
+  if (status === "unauthenticated") {
+    router.push("/auth/signin")
+    return null
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">Laden...</div>
+      </div>
+    )
+  }
 
 
   const selectedFolder = folders.find((f) => f.id === selectedFolderId)
@@ -71,6 +88,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
               <CameraTranslate />
               <ThemeToggle />
+              <AuthButton />
               <Button variant="outline" size="sm" onClick={() => setImportExportOpen(true)} className="flex">
                 <Download className="md:mr-2 h-4 w-4" />
                 <span className="hidden md:inline">Import/Export</span>

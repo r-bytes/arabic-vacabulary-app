@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner"
 import { SeedInitializer } from "@/lib/seed-initializer"
+import { SessionProviderWrapper } from "@/components/session-provider-wrapper"
 import { Analytics } from "@vercel/analytics/next"
 import type { Metadata } from "next"
 import type React from "react"
@@ -26,10 +27,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <SeedInitializer />
-        {children}
-        <Toaster />
-        <Analytics />
+        <SessionProviderWrapper>
+          <SeedInitializer />
+          {children}
+          <Toaster />
+          <Analytics />
+        </SessionProviderWrapper>
       </body>
     </html>
   )
