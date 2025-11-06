@@ -12,6 +12,7 @@ export async function getCurrentUser() {
     // For mobile: token is the user ID (in production, verify JWT)
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query } = require("./db")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [users]: any = await query("SELECT id, email, name, role FROM users WHERE id = ?", [token])
     if (users.length > 0) {
       return {
@@ -29,6 +30,7 @@ export async function getCurrentUser() {
     // Fetch role from database
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { query } = require("./db")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [users]: any = await query("SELECT role FROM users WHERE id = ?", [session.user.id])
     return {
       ...session.user,

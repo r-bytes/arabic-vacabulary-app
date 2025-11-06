@@ -10,6 +10,11 @@ export interface Card {
   folderId: string
   audioUrl?: string
   ttsHint?: string
+  exampleSentence?: string
+  exampleSentenceTranslation?: {
+    nl?: string
+    en?: string
+  }
   srs?: {
     interval: number
     ease: number

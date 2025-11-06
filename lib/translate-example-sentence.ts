@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server"
-
-// Multiple free translation services as fallbacks
+// Helper to translate example sentences
+// Works both client-side and server-side
 
 const SERVICES = [
   { url: "https://libretranslate.de/translate", name: "LibreTranslate.de" },
@@ -70,19 +69,54 @@ async function tryTranslate(text: string, source: string, target: string, apiKey
   throw new Error("All translation services failed")
 }
 
-export async function POST(req: Request): Promise<Response> {
-  try {
-    const { text, source, target } = await req.json()
-    if (!text || !target) return NextResponse.json({ error: "Missing text/target" }, { status: 400 })
+export async function translateExampleSentence(
+  sentence: string,
+  targetLanguages: ("nl" | "en")[],
+  baseUrl?: string
+): Promise<{ nl?: string; en?: string }> {
+  const translations: { nl?: string; en?: string } = {}
 
+  // If baseUrl is provided, we're on the server - use direct translation
+  // Otherwise, we're on the client - use API route
+  if (baseUrl) {
+    // Server-side: use direct translation
+    const promises = targetLanguages.map(async (lang) => {
+      try {
+        const translatedText = await tryTranslate(sentence, "ar", lang, process.env.TRANSLATE_API_KEY)
+        translations[lang] = translatedText
+      } catch (error) {
+        console.error(`Translation to ${lang} failed:`, error)
+      }
+    })
+    await Promise.all(promises)
+  } else {
+    // Client-side: use API route
+    const promises = targetLanguages.map(async (lang) => {
+      try {
+        const response = await fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: sentence,
+            source: "ar",
+            target: lang,
+          }),
+        })
 
-    const translatedText = await tryTranslate(text, source || "auto", target, process.env.TRANSLATE_API_KEY)
-    
-    return NextResponse.json({ translatedText })
-  } catch (e: unknown) {
-    const error = e as Error
-    return NextResponse.json({ error: error.message }, { status: 500 })
+        if (response.ok) {
+          const data = await response.json()
+          if (data.translatedText) {
+            translations[lang] = data.translatedText
+          }
+        }
+      } catch (error) {
+        console.error(`Translation to ${lang} failed:`, error)
+      }
+    })
+
+    await Promise.all(promises)
   }
-}
 
+  return translations
+}
 

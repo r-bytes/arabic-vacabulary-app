@@ -8,6 +8,9 @@ export async function GET(): Promise<Response> {
 
   const [rows] = await query(
     `SELECT id, ar, translit, nl, en, tags, folder_id as folderId, audio_url as audioUrl, tts_hint as ttsHint,
+            example_sentence as exampleSentence,
+            example_sentence_nl as exampleSentenceNl,
+            example_sentence_en as exampleSentenceEn,
             srs_interval as srsInterval, srs_ease as srsEase, srs_due as srsDue
        FROM cards WHERE user_id = ?`,
     [user.id]
@@ -21,6 +24,11 @@ export async function GET(): Promise<Response> {
     folderId: String(r.folderId),
     audioUrl: r.audioUrl || undefined,
     ttsHint: r.ttsHint || undefined,
+    exampleSentence: r.exampleSentence || undefined,
+    exampleSentenceTranslation: (r.exampleSentenceNl || r.exampleSentenceEn) ? {
+      nl: r.exampleSentenceNl || undefined,
+      en: r.exampleSentenceEn || undefined,
+    } : undefined,
     srs: r.srsInterval != null ? { interval: r.srsInterval, ease: r.srsEase, due: r.srsDue } : undefined,
   }))
   return NextResponse.json(cards)
@@ -37,6 +45,7 @@ export async function POST(req: Request): Promise<Response> {
     }
     
     // Verify folder belongs to user
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [folders]: any = await query("SELECT id FROM folders WHERE id = ? AND user_id = ?", [body.folderId, user.id])
     if (folders.length === 0) {
       return NextResponse.json({ error: "Folder not found or unauthorized" }, { status: 404 })
@@ -45,9 +54,22 @@ export async function POST(req: Request): Promise<Response> {
     const tags = body.tags ? body.tags.join(",") : null
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [result]: any = await query(
-      `INSERT INTO cards (ar, translit, nl, en, tags, folder_id, user_id, audio_url, tts_hint)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [body.ar, body.translit || null, body.gloss?.nl || null, body.gloss?.en || null, tags, body.folderId, user.id, body.audioUrl || null, body.ttsHint || null]
+      `INSERT INTO cards (ar, translit, nl, en, tags, folder_id, user_id, audio_url, tts_hint, example_sentence, example_sentence_nl, example_sentence_en)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        body.ar, 
+        body.translit || null, 
+        body.gloss?.nl || null, 
+        body.gloss?.en || null, 
+        tags, 
+        body.folderId, 
+        user.id, 
+        body.audioUrl || null, 
+        body.ttsHint || null, 
+        body.exampleSentence || null,
+        body.exampleSentenceTranslation?.nl || null,
+        body.exampleSentenceTranslation?.en || null
+      ]
     )
     const id = String(result.insertId)
     return NextResponse.json({ id, ...body })
@@ -64,6 +86,7 @@ export async function PUT(req: Request): Promise<Response> {
   if (!body?.id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
   
   // Verify card belongs to user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [cards]: any = await query("SELECT id FROM cards WHERE id = ? AND user_id = ?", [body.id, user.id])
   if (cards.length === 0) {
     return NextResponse.json({ error: "Card not found or unauthorized" }, { status: 404 })
@@ -71,6 +94,7 @@ export async function PUT(req: Request): Promise<Response> {
   
   // If folderId is being updated, verify new folder belongs to user
   if (body.folderId !== undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [folders]: any = await query("SELECT id FROM folders WHERE id = ? AND user_id = ?", [body.folderId, user.id])
     if (folders.length === 0) {
       return NextResponse.json({ error: "Folder not found or unauthorized" }, { status: 404 })
@@ -116,6 +140,20 @@ export async function PUT(req: Request): Promise<Response> {
     updates.push('tts_hint=?')
     values.push(body.ttsHint || null)
   }
+  if (body.exampleSentence !== undefined) {
+    updates.push('example_sentence=?')
+    values.push(body.exampleSentence || null)
+  }
+  if (body.exampleSentenceTranslation !== undefined) {
+    if (body.exampleSentenceTranslation.nl !== undefined) {
+      updates.push('example_sentence_nl=?')
+      values.push(body.exampleSentenceTranslation.nl || null)
+    }
+    if (body.exampleSentenceTranslation.en !== undefined) {
+      updates.push('example_sentence_en=?')
+      values.push(body.exampleSentenceTranslation.en || null)
+    }
+  }
   if (body.srs !== undefined) {
     updates.push('srs_interval=?', 'srs_ease=?', 'srs_due=?')
     values.push(body.srs.interval || null, body.srs.ease || null, body.srs.due || null)
@@ -138,6 +176,7 @@ export async function DELETE(req: Request): Promise<Response> {
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
   
   // Verify card belongs to user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [cards]: any = await query("SELECT id FROM cards WHERE id = ? AND user_id = ?", [id, user.id])
   if (cards.length === 0) {
     return NextResponse.json({ error: "Card not found or unauthorized" }, { status: 404 })

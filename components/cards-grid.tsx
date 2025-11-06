@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ExampleSentence } from "@/components/example-sentence"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
 import { CheckSquare, Filter, FolderInput, GripVertical, Pencil, Trash2, Volume2, X } from "lucide-react"
@@ -417,6 +418,16 @@ export function CardsGrid({ cards, onEditCard, selectedFolderId, onFolderFilter 
                               {tag}
                             </Badge>
                           ))}
+                        </div>
+                      )}
+
+                      {card.exampleSentence && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <ExampleSentence 
+                            sentence={card.exampleSentence} 
+                            lang="ar"
+                            translation={card.exampleSentenceTranslation}
+                          />
                         </div>
                       )}
                     </div>

@@ -16,23 +16,55 @@ export async function GET(): Promise<Response> {
        ORDER BY f.created_at DESC`
     )
 
-    const [cards] = await query(
-      `SELECT c.id, c.ar, c.translit, c.nl, c.en, c.tags, c.folder_id as folderId,
-              c.audio_url as audioUrl, c.tts_hint as ttsHint,
-              c.srs_interval as srsInterval, c.srs_ease as srsEase, c.srs_due as srsDue,
-              c.user_id as userId,
-              u.email as userEmail, u.name as userName
-       FROM cards c
-       LEFT JOIN users u ON c.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci
-       ORDER BY c.id DESC`
-    )
+    // Try to select with translation columns, fallback if they don't exist
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let cards: any[]
+    try {
+      const [result] = await query(
+        `SELECT c.id, c.ar, c.translit, c.nl, c.en, c.tags, c.folder_id as folderId,
+                c.audio_url as audioUrl, c.tts_hint as ttsHint,
+                c.example_sentence as exampleSentence,
+                c.example_sentence_nl as exampleSentenceNl,
+                c.example_sentence_en as exampleSentenceEn,
+                c.srs_interval as srsInterval, c.srs_ease as srsEase, c.srs_due as srsDue,
+                c.user_id as userId,
+                u.email as userEmail, u.name as userName
+         FROM cards c
+         LEFT JOIN users u ON c.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci
+         ORDER BY c.id DESC`
+      )
+      cards = result
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      // If columns don't exist, fallback to query without them
+      if (error?.code === 'ER_BAD_FIELD_ERROR' && error?.sqlMessage?.includes('example_sentence_nl')) {
+        const [result] = await query(
+          `SELECT c.id, c.ar, c.translit, c.nl, c.en, c.tags, c.folder_id as folderId,
+                  c.audio_url as audioUrl, c.tts_hint as ttsHint,
+                  c.example_sentence as exampleSentence,
+                  NULL as exampleSentenceNl,
+                  NULL as exampleSentenceEn,
+                  c.srs_interval as srsInterval, c.srs_ease as srsEase, c.srs_due as srsDue,
+                  c.user_id as userId,
+                  u.email as userEmail, u.name as userName
+           FROM cards c
+           LEFT JOIN users u ON c.user_id COLLATE utf8mb4_unicode_ci = u.id COLLATE utf8mb4_unicode_ci
+           ORDER BY c.id DESC`
+        )
+        cards = result
+      } else {
+        throw error
+      }
+    }
     return NextResponse.json({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       folders: folders.map((f: any) => ({
         ...f,
         id: String(f.id),
         folderId: f.folderId ? String(f.folderId) : null,
       })),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cards: cards.map((c: any) => ({
         id: String(c.id),
         ar: c.ar,
@@ -42,6 +74,11 @@ export async function GET(): Promise<Response> {
         folderId: String(c.folderId),
         audioUrl: c.audioUrl || undefined,
         ttsHint: c.ttsHint || undefined,
+        exampleSentence: c.exampleSentence || undefined,
+        exampleSentenceTranslation: (c.exampleSentenceNl || c.exampleSentenceEn) ? {
+          nl: c.exampleSentenceNl || undefined,
+          en: c.exampleSentenceEn || undefined,
+        } : undefined,
         srs: c.srsInterval != null ? { interval: c.srsInterval, ease: c.srsEase, due: c.srsDue } : undefined,
         userId: c.userId,
         userEmail: c.userEmail,
@@ -66,6 +103,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // Verify user exists
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [users]: any = await query("SELECT id FROM users WHERE id = ?", [userId])
     if (users.length === 0) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })

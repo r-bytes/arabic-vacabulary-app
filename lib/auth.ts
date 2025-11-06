@@ -22,6 +22,7 @@ export const authOptions: NextAuthConfig = {
 
         try {
           // Check if user exists
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const [users]: any = await query(
             "SELECT id, email, name, password FROM users WHERE email = ?",
             [credentials.email]
@@ -35,13 +36,13 @@ export const authOptions: NextAuthConfig = {
             
             await query(
               "INSERT INTO users (id, email, name, password) VALUES (?, ?, ?, ?)",
-              [userId, credentials.email, credentials.email.split("@")[0], hashedPassword]
+              [userId, credentials.email, (credentials.email as string).split("@")[0], hashedPassword]
             )
 
             return {
               id: userId,
               email: credentials.email,
-              name: credentials.email.split("@")[0],
+              name: (credentials.email as string).split("@")[0],
             }
           }
 
@@ -74,6 +75,7 @@ export const authOptions: NextAuthConfig = {
       if (account?.provider === "google") {
         try {
           // Check if user exists
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const [users]: any = await query(
             "SELECT id FROM users WHERE email = ?",
             [user.email]
@@ -101,11 +103,11 @@ export const authOptions: NextAuthConfig = {
               account.access_token,
               account.expires_at,
               account.token_type,
-              account.scope?.join(" ")
+              account.scope ? (account.scope as string).split(" ") : undefined
             ]
           )
-        } catch (error) {
-          console.error("OAuth sign in error:", error)
+        } catch (error: unknown) {
+          console.error("OAuth sign in error:", error instanceof Error ? error.message : error)
           return false
         }
       }

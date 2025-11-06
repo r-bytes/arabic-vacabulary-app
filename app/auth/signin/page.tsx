@@ -36,8 +36,10 @@ export default function SignInPage() {
         router.push("/")
         router.refresh()
       }
-    } catch (error) {
-      toast.error("Er is een fout opgetreden")
+    } catch (error: unknown) {
+      toast.error("Er is een fout opgetreden", {
+        description: error instanceof Error ? error.message : String(error),
+      })
     } finally {
       setIsLoading(false)
     }

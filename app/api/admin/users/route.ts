@@ -8,7 +8,8 @@ export async function GET(): Promise<Response> {
   if (admin instanceof NextResponse) return admin
 
   try {
-    const [users] = await query(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [users]: any = await query(
       "SELECT id, email, name, role, created_at as createdAt FROM users ORDER BY created_at DESC"
     )
     return NextResponse.json(users)
@@ -35,8 +36,10 @@ export async function PUT(req: Request): Promise<Response> {
 
     // Prevent removing last admin
     if (role === 'user') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const [admins]: any = await query("SELECT COUNT(*) as count FROM users WHERE role = 'admin'")
       if (admins[0].count <= 1) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const [checkUser]: any = await query("SELECT role FROM users WHERE id = ?", [userId])
         if (checkUser[0]?.role === 'admin') {
           return NextResponse.json(

@@ -14,6 +14,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // Check if user exists
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [users]: any = await query(
       "SELECT id, email, name, password FROM users WHERE email = ?",
       [email]

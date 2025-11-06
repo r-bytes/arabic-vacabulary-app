@@ -49,6 +49,7 @@ export async function PUT(req: Request): Promise<Response> {
   if (!id || !name) return NextResponse.json({ error: "Missing id/name" }, { status: 400 })
   
   // Verify folder belongs to user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [folders]: any = await query("SELECT id FROM folders WHERE id = ? AND user_id = ?", [id, user.id])
   if (folders.length === 0) {
     return NextResponse.json({ error: "Folder not found or unauthorized" }, { status: 404 })
@@ -66,6 +67,7 @@ export async function DELETE(req: Request): Promise<Response> {
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
   
   // Verify folder belongs to user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [folders]: any = await query("SELECT id FROM folders WHERE id = ? AND user_id = ?", [id, user.id])
   if (folders.length === 0) {
     return NextResponse.json({ error: "Folder not found or unauthorized" }, { status: 404 })

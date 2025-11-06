@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { AudioRecorder } from "@/components/audio-recorder"
+import { ExampleSentence } from "@/components/example-sentence"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -11,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useVocabStore } from "@/lib/store"
 import type { Card } from "@/lib/types"
-import { Clipboard, RotateCcw } from "lucide-react"
+import { generateSimpleExampleSentence } from "@/lib/example-sentence-generator"
+import { translateExampleSentence } from "@/lib/translate-example-sentence"
+import { Clipboard, RotateCcw, Sparkles } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Enhanced Arabic to Latin transliteration with diacritics
@@ -161,8 +164,12 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
     folderId: defaultFolderId || folders[0]?.id || "",
     audioUrl: "",
     ttsHint: "ar-SA",
+    exampleSentence: "",
+    exampleSentenceNl: "",
+    exampleSentenceEn: "",
   })
   const [autoTranslate, setAutoTranslate] = useState(true)
+  const [generatingExample, setGeneratingExample] = useState(false)
 
   // Paste functionality
   const handlePaste = async (field: 'ar' | 'nl' | 'en') => {
@@ -188,6 +195,9 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
         folderId: card.folderId,
         audioUrl: card.audioUrl || "",
         ttsHint: card.ttsHint || "ar-SA",
+        exampleSentence: card.exampleSentence || "",
+        exampleSentenceNl: card.exampleSentenceTranslation?.nl || "",
+        exampleSentenceEn: card.exampleSentenceTranslation?.en || "",
       })
     } else {
       setFormData({
@@ -199,9 +209,40 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
         folderId: defaultFolderId || folders[0]?.id || "",
         audioUrl: "",
         ttsHint: "ar-SA",
+        exampleSentence: "",
+        exampleSentenceNl: "",
+        exampleSentenceEn: "",
       })
     }
   }, [card, defaultFolderId, folders, open])
+
+  const handleGenerateExample = async () => {
+    if (!formData.ar) return
+    
+    setGeneratingExample(true)
+    const example = generateSimpleExampleSentence(formData.ar)
+    setFormData(prev => ({ ...prev, exampleSentence: example }))
+    
+    // Translate the example sentence
+    const targetLanguages: ("nl" | "en")[] = []
+    if (formData.nl) targetLanguages.push("nl")
+    if (formData.en) targetLanguages.push("en")
+    
+    if (targetLanguages.length > 0 && example) {
+      try {
+        const translations = await translateExampleSentence(example, targetLanguages)
+        setFormData(prev => ({
+          ...prev,
+          exampleSentenceNl: translations.nl || "",
+          exampleSentenceEn: translations.en || "",
+        }))
+      } catch (error) {
+        console.error("Failed to translate example sentence:", error)
+      }
+    }
+    
+    setGeneratingExample(false)
+  }
 
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -223,6 +264,11 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
       folderId: formData.folderId,
       audioUrl: formData.audioUrl || undefined,
       ttsHint: formData.ttsHint || undefined,
+      exampleSentence: formData.exampleSentence || undefined,
+      exampleSentenceTranslation: (formData.exampleSentenceNl || formData.exampleSentenceEn) ? {
+        nl: formData.exampleSentenceNl || undefined,
+        en: formData.exampleSentenceEn || undefined,
+      } : undefined,
     }
 
     if (card) {
@@ -244,6 +290,9 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
       folderId: defaultFolderId || folders[0]?.id || "",
       audioUrl: "",
       ttsHint: "ar-SA",
+      exampleSentence: "",
+      exampleSentenceNl: "",
+      exampleSentenceEn: "",
     })
   }
 
@@ -350,7 +399,10 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
                 nl: formData.nl,
                 en: formData.en,
                 translit: formData.translit,
-                tags: formData.tags
+                tags: formData.tags,
+                exampleSentence: formData.exampleSentence,
+                exampleSentenceNl: formData.exampleSentenceNl,
+                exampleSentenceEn: formData.exampleSentenceEn,
               }}
               onResult={(partial) => setFormData((prev) => ({ ...prev, ...partial }))}
             />
@@ -396,6 +448,42 @@ export function CardEditorModal({ open, onOpenChange, card, defaultFolderId }: C
             onAudioChange={(url) => setFormData({ ...formData, audioUrl: url || "" })}
           />
 
+          {/* Example Sentence Section */}
+          <div className="rounded-lg border-2 border-border bg-card p-6 space-y-4 shadow-lg">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-foreground border-b border-border pb-2">Voorbeeldzin</h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateExample}
+                disabled={!formData.ar || generatingExample}
+                className="font-semibold border-2"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                {generatingExample ? "Genereren..." : "Genereer"}
+              </Button>
+            </div>
+            <div className="space-y-2">
+              <Textarea
+                value={formData.exampleSentence}
+                onChange={(e) => setFormData({ ...formData, exampleSentence: e.target.value })}
+                placeholder="هذا كتاب"
+                dir="rtl"
+                className="min-h-[60px] text-lg border-2 border-border focus:border-primary"
+              />
+              {formData.exampleSentence && (
+                <ExampleSentence 
+                  sentence={formData.exampleSentence} 
+                  lang="ar"
+                  translation={{ 
+                    nl: formData.exampleSentenceNl || undefined, 
+                    en: formData.exampleSentenceEn || undefined 
+                  }}
+                />
+              )}
+            </div>
+          </div>
 
           {/* Preview Section */}
           <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/10 to-primary/20 p-6 shadow-lg">
@@ -457,8 +545,8 @@ function AutoTranslateFields({
   value,
   onResult,
 }: {
-  value: { ar: string; nl: string; en: string; translit: string; tags: string }
-  onResult: (partial: Partial<{ ar: string; nl: string; en: string; translit: string; tags: string }>) => void
+  value: { ar: string; nl: string; en: string; translit: string; tags: string; exampleSentence: string; exampleSentenceNl: string; exampleSentenceEn: string }
+  onResult: (partial: Partial<{ ar: string; nl: string; en: string; translit: string; tags: string; exampleSentence: string; exampleSentenceNl: string; exampleSentenceEn: string }>) => void
 }) {
   const [busy, setBusy] = useState(false)
   const [lastProcessed, setLastProcessed] = useState("")
@@ -565,6 +653,32 @@ function AutoTranslateFields({
           }
         }
         
+        // Auto-generate example sentence if Arabic text is present and example sentence is empty
+        if (value.ar && !value.exampleSentence && /[\u0600-\u06FF]/.test(value.ar)) {
+          const example = generateSimpleExampleSentence(value.ar)
+          if (example) {
+            onResult({ exampleSentence: example })
+            
+            // Also translate the example sentence if we have translations
+            const targetLanguages: ("nl" | "en")[] = []
+            if (value.nl) targetLanguages.push("nl")
+            if (value.en) targetLanguages.push("en")
+            
+            if (targetLanguages.length > 0) {
+              translateExampleSentence(example, targetLanguages)
+                .then((translations) => {
+                  onResult({
+                    exampleSentenceNl: translations.nl || "",
+                    exampleSentenceEn: translations.en || "",
+                  })
+                })
+                .catch((error) => {
+                  console.error("Failed to translate example sentence:", error)
+                })
+            }
+          }
+        }
+        
       } catch (e) {
         console.error("Auto-translate error:", e)
       } finally {
@@ -572,7 +686,7 @@ function AutoTranslateFields({
       }
     }
     run()
-  }, [value.ar, value.nl, value.en, value.translit, value.tags, busy, lastProcessed, onResult], 800)
+  }, [value.ar, value.nl, value.en, value.translit, value.tags, value.exampleSentence, value.exampleSentenceNl, value.exampleSentenceEn, busy, lastProcessed, onResult], 800)
 
   return busy ? <div className="text-xs text-muted-foreground">Vertalen...</div> : null
 }

@@ -2,6 +2,7 @@
 
 import type React from "react"
 
+import { ExampleSentence } from "@/components/example-sentence"
 import { Button } from "@/components/ui/button"
 import type { Card, Direction } from "@/lib/types"
 import { RotateCcw, Volume2 } from "lucide-react"
@@ -128,7 +129,7 @@ export function Flashcard({ card, direction, onAudio }: FlashcardProps) {
                 <Button
                   variant="default"
                   size="lg"
-                  className={`absolute bottom-3 right-3 sm:bottom-4 sm:right-4 md:bottom-6 md:right-6 h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full shadow-lg transition-all z-10 ${
+                  className={`absolute bottom-3 left-3 sm:bottom-4 sm:right-4 md:bottom-6 md:right-6 h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full shadow-lg transition-all z-10 ${
                     isPlayingAudio ? "scale-110 bg-primary" : ""
                   }`}
                   onClick={handleAudioClick}
@@ -165,6 +166,18 @@ export function Flashcard({ card, direction, onAudio }: FlashcardProps) {
           </div>
         </div>
       </div>
+
+      {card.exampleSentence && (
+        <div className="w-full max-w-2xl px-8 mt-2">
+          <div className="rounded-lg bg-muted/50 p-3 border border-border">
+            <ExampleSentence 
+              sentence={card.exampleSentence} 
+              lang="ar"
+              translation={card.exampleSentenceTranslation}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground px-4">
         <div className="flex items-center gap-2">

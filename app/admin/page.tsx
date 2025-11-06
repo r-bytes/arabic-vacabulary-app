@@ -71,6 +71,7 @@ export default function AdminPage() {
     if (status === "authenticated" && session?.user) {
       checkAdminAndLoad()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, session, router])
 
   async function checkAdminAndLoad() {
@@ -127,8 +128,9 @@ export default function AdminPage() {
 
       toast.success("Rol bijgewerkt")
       await loadData()
-    } catch (error: any) {
-      toast.error(error.message || "Fout bij bijwerken van rol")
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error"
+      toast.error(errorMessage || "Fout bij bijwerken van rol")
     }
   }
 
@@ -155,8 +157,9 @@ export default function AdminPage() {
       setSelectedItems([])
       setSelectedUserForReassign(null)
       await loadData()
-    } catch (error) {
-      toast.error("Fout bij toewijzen")
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error"
+      toast.error(errorMessage || "Fout bij toewijzen")
     }
   }
 
