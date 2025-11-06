@@ -27,23 +27,7 @@ export default function DashboardPage() {
   const [editingCard, setEditingCard] = useState<Card | undefined>(undefined)
   const [importExportOpen, setImportExportOpen] = useState(false)
 
-  // Redirect to login if not authenticated
-  if (status === "unauthenticated") {
-    router.push("/auth/signin")
-    return null
-  }
-
-  if (status === "loading") {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">Laden...</div>
-      </div>
-    )
-  }
-
-
-  const selectedFolder = folders.find((f) => f.id === selectedFolderId)
-
+  // All hooks must be called before any early returns
   const filteredCards = useMemo(() => {
     let result = selectedFolderId ? cards.filter((c) => c.folderId === selectedFolderId) : cards
 
@@ -61,6 +45,22 @@ export default function DashboardPage() {
 
     return result
   }, [cards, selectedFolderId, searchQuery])
+
+  const selectedFolder = folders.find((f) => f.id === selectedFolderId)
+
+  // Redirect to login if not authenticated
+  if (status === "unauthenticated") {
+    router.push("/auth/signin")
+    return null
+  }
+
+  if (status === "loading") {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">Laden...</div>
+      </div>
+    )
+  }
 
   const handleAddCard = () => {
     setEditingCard(undefined)

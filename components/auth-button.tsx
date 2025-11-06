@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { useSession, signIn, signOut } from "next-auth/react"
-import { LogIn, LogOut, User } from "lucide-react"
+import { LogIn, LogOut, User, Shield } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,9 +11,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export function AuthButton() {
+  const router = useRouter()
   const { data: session, status } = useSession()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (session?.user) {
+      checkAdmin()
+    } else {
+      setIsAdmin(false)
+    }
+  }, [session])
+
+  async function checkAdmin() {
+    try {
+      const res = await fetch("/api/admin/users")
+      if (res.ok) {
+        setIsAdmin(true)
+      } else {
+        setIsAdmin(false)
+      }
+    } catch {
+      setIsAdmin(false)
+    }
+  }
 
   if (status === "loading") {
     return (
@@ -39,6 +64,15 @@ export function AuthButton() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {isAdmin && (
+            <>
+              <DropdownMenuItem onClick={() => router.push("/admin")}>
+                <Shield className="mr-2 h-4 w-4" />
+                Admin Panel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuItem onClick={() => signOut()}>
             <LogOut className="mr-2 h-4 w-4" />
             Uitloggen

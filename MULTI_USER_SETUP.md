@@ -20,6 +20,11 @@ Of voer het SQL script handmatig uit in phpMyAdmin / MySQL client.
 - `user_id` kolommen aan `folders` en `cards` tabellen
 - Migreert bestaande data naar een "system" gebruiker
 
+**Als je een foreign key error krijgt (#1005):**
+1. Gebruik het handmatige script: `scripts/migrate-users-manual.sql` - voer de stappen één voor één uit
+2. Of voer eerst het verificatie script uit: `scripts/verify-migration.sql` om te zien wat er mis is
+3. Het automatische script probeert bestaande foreign keys te verwijderen, maar soms moet je dit handmatig doen
+
 ### 2. Environment Variables
 
 Voeg toe aan je `.env` bestand (webapp):
@@ -116,11 +121,52 @@ Alle API routes (`/api/folders`, `/api/cards`) zijn nu beveiligd:
 - Check of migratie script is uitgevoerd
 - Check of `user_id` kolommen bestaan
 - Check foreign key constraints
+- **Foreign key error (#1005):** Gebruik `scripts/migrate-users-manual.sql` en voer stappen handmatig uit
+- **Verificatie:** Voer `scripts/verify-migration.sql` uit om te controleren of alles correct is
+
+**"Ik zie alle kaartjes van andere gebruikers":**
+- Dit betekent dat de migratie niet volledig is uitgevoerd
+- Check of `user_id` kolommen bestaan: `SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'cards' AND COLUMN_NAME = 'user_id'`
+- Check of alle kaartjes een `user_id` hebben: `SELECT COUNT(*) FROM cards WHERE user_id IS NULL` (moet 0 zijn)
+- Voer het verificatie script uit: `scripts/verify-migration.sql`
+- Als er NULL waarden zijn, voer uit: `UPDATE cards SET user_id = 'system' WHERE user_id IS NULL` (en hetzelfde voor folders)
 
 **Login werkt niet:**
 - Check `.env` bestand met `NEXTAUTH_SECRET`
 - Check database connectie
 - Check console voor errors
+
+## 👑 Admin Functionaliteit
+
+### Admin Setup
+
+1. **Voer admin role migratie uit:**
+   ```bash
+   mysql -u your_user -p your_database < scripts/add-admin-role.sql
+   ```
+
+2. **Maak een gebruiker admin:**
+   ```sql
+   UPDATE users SET role = 'admin' WHERE email = 'jouw-email@example.com';
+   ```
+
+### Admin Features
+
+Admins hebben toegang tot `/admin` waar ze kunnen:
+
+- **Gebruikersbeheer:**
+  - Alle gebruikers zien
+  - Rollen wijzigen (user/admin)
+  - Laatste admin kan niet worden verwijderd (bescherming)
+
+- **Data Toewijzing:**
+  - Alle folders en kaarten zien (van alle gebruikers)
+  - Folders/kaarten toewijzen aan gebruikers
+  - Bulk selectie en toewijzing
+
+### Admin Navigatie
+
+Admins zien een "Admin Panel" link in het gebruikersmenu (klik op het gebruikersicoon rechtsboven).
 
 ## 📝 Volgende Stappen
 
@@ -128,5 +174,4 @@ Alle API routes (`/api/folders`, `/api/cards`) zijn nu beveiligd:
 2. Voeg password reset functionaliteit toe
 3. Voeg email verificatie toe
 4. Voeg user profile pagina toe
-5. Voeg admin panel toe (voor beheer van alle users)
 
