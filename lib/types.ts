@@ -26,6 +26,7 @@ export interface Folder {
   id: string
   name: string
   createdAt: string
+  isFavorite?: boolean
 }
 
 export type Direction = "ar-nl" | "nl-ar" | "ar-en" | "en-ar"
